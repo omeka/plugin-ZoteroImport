@@ -6,7 +6,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         $dropboxDir = PLUGIN_DIR . DIRECTORY_SEPARATOR . 'ZoteroImport' . DIRECTORY_SEPARATOR . 'dropbox';
         $exportDirs = array();
         foreach (new DirectoryIterator($dropboxDir) as $fileInfo) {
-            if ($fileInfo->isDir() && !$fileInfo->isDot()) {
+            if ($fileInfo->isDir() && !$fileInfo->isDot() && $fileInfo->getFilename() != '.svn') {
                 $exportDirs[] = $fileInfo->getPathname();
             }
         }
