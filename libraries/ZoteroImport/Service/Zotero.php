@@ -5,75 +5,62 @@ class ZoteroImport_Service_Zotero extends Zend_Rest_Client
 {
     const URI = 'https://api.zotero.org';
     
-    public function __construct()
+    public function authenticate($username, $password)
     {
-        parent::__construct(self::URI);
-    }
-    
-    protected function _init()
-    {
-        $client = self::getHttpClient();
-        $client->resetParameters();
+        self::getHttpClient()->setAuth($username, $password);
     }
     
     public function userItems($userId, array $params = array())
     {
-        $this->_init();
-        
-        $userId = (int) $userId;
         $path = "/users/$userId/items";
-        
-        $response = $this->restGet($path, $params);
-        return new Zend_Rest_Client_Result($response->getBody());
     }
     
     public function userItemsTop($userId, array $params = array())
     {
-        $this->_init();
-        
-        $userId = (int) $userId;
         $path = "/users/$userId/items/top";
-        
-        $response = $this->restGet($path, $params);
-        return new Zend_Rest_Client_Result($response->getBody());
     }
     
     public function userItem($userId, $itemId, array $params = array())
     {
-        $this->_init();
-        
-        $userId = (int) $userId;
-        $itemId = (int) $itemId;
-        $path = "/users/$userId/item/$itemId";
-        
-        $response = $this->restGet($path, $params);
-        return new Zend_Rest_Client_Result($response->getBody());
+        $path = "/users/$userId/items/$itemId";
     }
     
     public function group($groupId, array $params = array())
     {
-        $this->_init();
-        
-        $groupId = (int) $groupId;
         $path = "/groups/$groupId";
-        
-        $response = $this->restGet($path, $params);
-        return new Zend_Rest_Client_Result($response->getBody());
     }
     
     public function groupItems($groupId, array $params = array())
     {
-        $this->_init();
-        
-        $groupId = (int) $groupId;
         $path = "/groups/$groupId/items";
-        
-        $response = $this->restGet($path, $params);
-        return new Zend_Rest_Client_Result($response->getBody());
+        return $this->_getFeed($path, $params);
     }
     
-    public function authenticate($username, $password)
+    public function groupItem($groupId, $itemId, array $params = array())
     {
-        self::getHttpClient()->setAuth($username, $password);
+        $path = "/groups/$groupId/items/$itemId";
+        $feed = $this->_getFeed($path, $params);
+        return $feed->current();
+    }
+    
+    public function groupItemChildren($groupId, $itemId, array $params = array())
+    {
+        $path = "/groups/$groupId/items/$itemId/children";
+        return $this->_getFeed($path, $params);
+    }
+    
+    protected function _getFeed($path, $params)
+    {
+        try {
+            require_once 'Zend/Feed/Atom.php';
+            return new Zend_Feed_Atom($this->_getUri($path, $params));
+        } catch (Exception $e) {
+            exit($e);
+        }
+    }
+    
+    protected function _getUri($path, $params)
+    {
+        return self::URI . "$path?" . http_build_query($params);
     }
 }

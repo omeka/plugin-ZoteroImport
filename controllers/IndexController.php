@@ -3,86 +3,45 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
 {    
     public function indexAction()
     {
-        $z = new ZoteroImport_Service_Zotero();
+        // Zend_Form: text input: user library items feed URL, post submit to importUserAction
+        // Zend_Form: text input: group library items feed URL, post submit to importGroupAction
         
-        //$result = $z->userItemsTop(66453, array('content' => 'full'));
-        //$result = $z->groupItems(3113, array('start' => 300, 'content' => 'full'));
-        //print_r($result);
+        /**********************************************************************/
         
         $groupId = 3113;
+        $itemId = 67826733;
         
-        do {
-            
-            // Start iteration at 0.
-            if (!isset($start)) {
-                $start = 0;
-            }
-            
-            // Get the request response.
-            $xml = $z->groupItems($groupId, array('start' => $start, 'content' => 'full'))->getIterator();
-            
-            // Register XPath namespaces.
-            $xml->registerXPathNamespace('atom', 'http://www.w3.org/2005/Atom');
-            $xml->registerXPathNamespace('zapi', 'http://zotero.org/ns/api');
-            $xml->registerXPathNamespace('zxfer', 'http://zotero.org/ns/transfer');
-            
-            // Set the self, next, and last page URLs.
-            $links = array('self', 'next', 'last');
-            foreach ($links as $link) {
-                $$link = $xml->xpath("atom:link[@rel='$link']/attribute::href");
-                $$link = (string) ${$link}[0];
-            }
-            
-            // Set the start parameter for the next page iteration.
-            if ($next) {
-                $query = parse_url($next, PHP_URL_QUERY);
-                parse_str($query);
-            }
-            
-            //echo "self: $self\nnext: $next\nlast: $last\n";
-            
-            // MAP ZOTERO ENTRY TO OMEKA ITEM...
-            $entries = $xml->entry;
-            foreach ($entries as $entry) {
-                
-                //print_r($entry);exit;
-                
-                $title      = (string) $entry->title;
-                $authorName = (string) $entry->name;
-                $authorUri  = (string) $entry->uri;
-                $id         = (string) $entry->id;
-                $published  = (string) $entry->published;
-                $updated    = (string) $entry->updated;
-                
-                $links = $entry->link;
-                foreach ($links as $link) {
-                    // get links
-                }
-                
-                $zapi = $entry->children('http://zotero.org/ns/api');
-                $itemId   = $zapi->itemId;
-                $itemType = $zapi->itemType;
-                $numTags  = $zapi->numTags;
-                
-                $content = $entry->content;
-                    
-                    $item = $content->item;
-                        
-                        $fields = $item->field;
-                        foreach ($fields as $field) {
-                            // get fields
-                        }
-                        
-                        $creators = $item->creator;
-                        foreach ($creators as $creator) {
-                            // get creators
-                        }
-            }
-            
-            //$totalResults = $xml->xpath('zapi:totalResults');
-            //print_r($totalResults);exit;
+        require_once 'ZoteroImport/Service/Zotero.php';
+        $zotero = new ZoteroImport_Service_Zotero;
         
-        // Stop iteration if the current and last pages are identical.
-        } while ($self != $last); // !$next ?
+        $entry = $zotero->groupItem($groupId, $itemId, array('content' => 'full'));
+        $this->view->assign('entry', $entry);
+        
+        if ($entry->numChildren) {
+            echo $entry->numChildren;
+            $feed = $zotero->groupItemChildren($groupId, $itemId, array('content' => 'full'));
+            echo $feed->saveXml();
+        }
+        
+        //$feed = $zotero->groupItems(3113, array('content' => 'full'));
+        //echo $feed->totalResults;
+        
+        /**********************************************************************/
+    }
+    
+    public function importUserAction()
+    {
+        // extract user ID from passed feed URL
+        // check for valid user
+        // kick off the background process
+        // redirect to indexAction
+    }
+    
+    public function importGroupAction()
+    {
+        // extract user ID from passed feed URL
+        // check for valid group
+        // kick off the background process
+        // redirect to indexAction
     }
 }
