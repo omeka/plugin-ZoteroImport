@@ -61,6 +61,14 @@ class ZoteroImport_Service_Zotero extends Zend_Rest_Client
     
     protected function _getUri($path, $params)
     {
-        return self::URI . "$path?" . http_build_query($params);
+        try {
+            require_once 'Zend/Uri.php';
+            $uri = Zend_Uri::factory(self::URI);
+            $uri->setPath($path);
+            $uri->setQuery($params);
+            return $uri->getUri();
+        } catch (Exception $e) {
+            exit($e);
+        }
     }
 }
