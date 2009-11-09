@@ -1,7 +1,7 @@
 <?php
 require_once 'Zend/Rest/Client.php';
 
-class ZoteroImport_Service_Zotero extends Zend_Rest_Client
+class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
 {
     const URI = 'https://api.zotero.org';
     
