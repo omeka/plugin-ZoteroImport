@@ -29,11 +29,11 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
             'description' => 'Enter the Atom Feed URL of the Zotero library you want to import.', 
             'class' => 'textinput', 
             'required' => true, 
-            'validators' => array('zoteroapiurl'),
+            'validators' => array(array('zoteroapiurl', false, array(array('groupItems', 'userItems')))),
             'decorators' => array(
                 'ViewHelper', 
-                'Errors', 
                 array('Description', array('tag' => 'p', 'class' => 'explanation')), 
+                'Errors', 
                 array(array('InputsTag' => 'HtmlTag'), array('tag' => 'div', 'class' => 'inputs')), 
                 'Label', 
                 array(array('FieldTag' => 'HtmlTag'), array('tag' => 'div', 'class' => 'field'))
