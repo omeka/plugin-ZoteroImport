@@ -13,6 +13,14 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
             $this->view->assign('form', $form);
             return $this->render('index');
         }
+        
+        $this->view->assign('type', $this->_getLibraryType($this->_getParam('feed')));
+    }
+    
+    protected function _getLibraryType($feed)
+    {
+        preg_match('/groups|users/', $feed, $match);
+        return $match[0];
     }
     
     protected function _getFeedForm()
