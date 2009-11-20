@@ -1,8 +1,12 @@
 <?php
-class ZoteroImport_ImportGroupItemsProcess extends ProcessAbstract
+class ZoteroImport_ImportGroupProcess extends ProcessAbstract
 {
     public function run($args)
     {
+        require_once 'ZoteroApiClient/Service/Zotero.php';
+        $z = new ZoteroApiClient_Service_Zotero;
+        $feed = $z->groupItemsTop($id);
+        /*
         $z = new ZoteroImport_Service_Zotero();
         
         //$result = $z->userItemsTop(66453, array('content' => 'full'));
@@ -84,5 +88,6 @@ class ZoteroImport_ImportGroupItemsProcess extends ProcessAbstract
         
         // Stop iteration if the current and last pages are identical.
         } while ($self != $last); // !$next ?
+        */
     }
 }

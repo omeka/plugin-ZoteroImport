@@ -9,8 +9,8 @@ class ZoteroApiClient_Validate_Zoteroapiurl extends Zend_Validate_Abstract
     
     protected $_method;
     protected $_methods = array(
-        'groupItems' => '/groups/\d+/items/?', 
-        'userItems' => '/users/\d+/items/?'
+        'groupItems' => '/groups/\d+/items/?$', 
+        'userItems' => '/users/\d+/items/?$'
     );
     
     protected $_messageTemplates = array(

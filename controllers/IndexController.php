@@ -10,17 +10,68 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
     {
         $form = $this->_getFeedForm();
         if (!$form->isValid($_POST)) {
+            $this->flashError('There are errors in the form. Please check below and resubmit.');
             $this->view->assign('form', $form);
             return $this->render('index');
         }
         
-        $this->view->assign('type', $this->_getLibraryType($this->_getParam('feed')));
+        $type = $this->_getLibraryType($this->_getParam('feedUrl'));
+        $id   = $this->_getLibraryId($this->_getParam('feedUrl'));
+        
+        switch ($type) {
+            case 'groups':
+                
+                // Verify that there are no errors when requesting this group.
+                if (!$this->_verifyGroup($id)) {
+                    $this->view->assign('form', $form);
+                    return $this->render('index');
+                }
+                
+                // Dispatch the background process.
+                $args = array('id'      => $id, 
+                              'user_id' => current_user()->id);
+                ProcessDispatcher::startProcess('ZoteroImport_ImportGroupItemsProcess', null, $args);
+                
+                $this->flashSuccess('Importing the group. This may take a while.');
+                $this->redirect->goto('index');
+                break;
+            
+            case 'users':
+                $this->flashError('Error: user import is not yet supported.');
+                break;
+            default:
+                $this->flashError('Error: unknown import.');
+                break;
+        }
+        
+        // Assume an error occured.
+        $this->view->assign('form', $form);
+        return $this->render('index');
     }
     
-    protected function _getLibraryType($feed)
+    protected function _getLibraryType($feedUrl)
     {
-        preg_match('/groups|users/', $feed, $match);
+        preg_match('/groups|users/', $feedUrl, $match);
         return $match[0];
+    }
+    
+    protected function _getLibraryId($feedUrl)
+    {
+        preg_match('/\d+/', $feedUrl, $match);
+        return $match[0];
+    }
+    
+    protected function _verifyGroup($id)
+    {
+        try {
+            require_once 'ZoteroApiClient/Service/Zotero.php';
+            $z = new ZoteroApiClient_Service_Zotero;
+            $feed = $z->group($id); // a thrown exception means error
+            return true;
+        } catch (Exception $e) {
+            $this->flashError($e->getMessage());
+            return false;
+        }
     }
     
     protected function _getFeedForm()
@@ -32,13 +83,14 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
              ->addElementPrefixPath('ZoteroApiClient_Validate', 'ZoteroApiClient/Validate/', 'validate')
              ->removeDecorator('HtmlTag');
         
-        $form->addElement('text', 'feed', array(
-            'label' => 'Zotero Atom Feed URL', 
+        $form->addElement('text', 'feedUrl', array(
+            'label'       => 'Zotero Atom Feed URL', 
             'description' => 'Enter the Atom Feed URL of the Zotero library you want to import.', 
-            'class' => 'textinput', 
-            'required' => true, 
-            'validators' => array(array('zoteroapiurl', false, array(array('groupItems', 'userItems')))),
-            'decorators' => array(
+            'class'       => 'textinput', 
+            'size'        => '60', 
+            'required'    => true, 
+            'validators'  => array(array('zoteroapiurl', false, array(array('groupItems', 'userItems')))),
+            'decorators'  => array(
                 'ViewHelper', 
                 array('Description', array('tag' => 'p', 'class' => 'explanation')), 
                 'Errors', 

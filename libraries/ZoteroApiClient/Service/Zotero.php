@@ -28,11 +28,18 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
     public function group($groupId, array $params = array())
     {
         $path = "/groups/$groupId";
+        return $this->_getFeed($path, $params);
     }
     
     public function groupItems($groupId, array $params = array())
     {
         $path = "/groups/$groupId/items";
+        return $this->_getFeed($path, $params);
+    }
+    
+    public function groupItemsTop($groupId, array $params = array())
+    {
+        $path = "/groups/$groupId/items/top";
         return $this->_getFeed($path, $params);
     }
     
@@ -51,24 +58,16 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
     
     protected function _getFeed($path, $params)
     {
-        try {
-            require_once 'Zend/Feed/Atom.php';
-            return new Zend_Feed_Atom($this->_getUri($path, $params));
-        } catch (Exception $e) {
-            exit($e);
-        }
+        require_once 'Zend/Feed/Atom.php';
+        return new Zend_Feed_Atom($this->_getUri($path, $params));
     }
     
     protected function _getUri($path, $params)
     {
-        try {
-            require_once 'Zend/Uri.php';
-            $uri = Zend_Uri::factory(self::URI);
-            $uri->setPath($path);
-            $uri->setQuery($params);
-            return $uri->getUri();
-        } catch (Exception $e) {
-            exit($e);
-        }
+        require_once 'Zend/Uri.php';
+        $uri = Zend_Uri::factory(self::URI);
+        $uri->setPath($path);
+        $uri->setQuery($params);
+        return $uri->getUri();
     }
 }

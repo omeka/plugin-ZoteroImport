@@ -4,5 +4,6 @@ head($head);
 ?>
 <h1><?php echo $head['title']; ?></h1>
 <div id="primary">
+<?php echo flash(); ?>
 </div>
 <?php foot(); ?>
