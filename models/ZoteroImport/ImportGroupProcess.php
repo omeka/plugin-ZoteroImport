@@ -5,7 +5,7 @@ class ZoteroImport_ImportGroupProcess extends ProcessAbstract
     {
         require_once 'ZoteroApiClient/Service/Zotero.php';
         $z = new ZoteroApiClient_Service_Zotero;
-        $feed = $z->groupItemsTop($id);
+        $feed = $z->groupItemsTop($args['id']);
         /*
         $z = new ZoteroImport_Service_Zotero();
         

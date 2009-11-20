@@ -30,7 +30,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
                 // Dispatch the background process.
                 $args = array('id'      => $id, 
                               'user_id' => current_user()->id);
-                ProcessDispatcher::startProcess('ZoteroImport_ImportGroupItemsProcess', null, $args);
+                ProcessDispatcher::startProcess('ZoteroImport_ImportGroupProcess', null, $args);
                 
                 $this->flashSuccess('Importing the group. This may take a while.');
                 $this->redirect->goto('index');
