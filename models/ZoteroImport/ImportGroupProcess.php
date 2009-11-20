@@ -1,11 +1,124 @@
 <?php
+// question: what exactly are the "API key" and "shared secret"? And where can I find them?
+
 class ZoteroImport_ImportGroupProcess extends ProcessAbstract
 {
+    protected $_feed = array();
+    protected $_entries = array();
+    
     public function run($args)
     {
+        // /usr/bin/php /var/www/omekatag/application/core/background.php -p 30 -l initializeRoutes
+        // getting a 500 Internal Server Error
         require_once 'ZoteroApiClient/Service/Zotero.php';
         $z = new ZoteroApiClient_Service_Zotero;
-        $feed = $z->groupItemsTop($args['id']);
+        $z->authenticate($args['username'], $args['password']);
+        $response = $z->userItemFile(66453, 75201954);
+        print_r($response);exit;
+        
+/******************************************************************************/
+        
+        // /usr/bin/php /var/www/omekatag/application/core/background.php -p 29 -l initializeRoutes
+        require_once 'ZoteroApiClient/Service/Zotero.php';
+        $z = new ZoteroApiClient_Service_Zotero;
+        $feed = $z->groupItemsTop($args['id'], array('content' => 'full'));
+        
+        // Set Zotero feed variables.
+        $this->_feed['title']        = (string) $feed->title;
+        $this->_feed['id']           = (string) $feed->id;
+        $this->_feed['totalResults'] = (string) $feed->totalResults;
+        $this->_feed['apiVersion']   = (string) $feed->apiVersion;
+        $this->_feed['updated']      = (string) $feed->updated;
+        foreach ($feed->link as $link) {
+            switch ($link['rel']) {
+                case 'self':
+                    $this->_feed['link']['self'] = $link['href'];
+                    break;
+                case 'first':
+                    $this->_feed['link']['first'] = $link['href'];
+                    break;
+                case 'next':
+                    $this->_feed['link']['next'] = $link['href'];
+                    break;
+                case 'last':
+                    $this->_feed['link']['last'] = $link['href'];
+                    break;
+                case 'alternate':
+                    $this->_feed['link']['alternate'] = $link['href'];
+                    break;
+                default:
+                    break;
+            }
+        }
+        
+        // Map Zotero entry to Omeka item.
+        foreach ($feed->entry as $entry) {
+            
+            $itemID = (string) $entry->itemID;
+            
+            $this->_entries[$itemID]['title']          = (string) $entry->title;
+            $this->_entries[$itemID]['authorName']     = (string) $entry->author->name;
+            $this->_entries[$itemID]['authorUri']      = (string) $entry->author->uri;
+            $this->_entries[$itemID]['id']             = (string) $entry->id;
+            $this->_entries[$itemID]['published']      = (string) $entry->published;
+            $this->_entries[$itemID]['updated']        = (string) $entry->updated;
+            $this->_entries[$itemID]['itemType']       = (string) $entry->itemType;
+            $this->_entries[$itemID]['creatorSummary'] = (string) $entry->creatorSummary;
+            $this->_entries[$itemID]['numChildren']    = (string) $entry->numChildren;
+            $this->_entries[$itemID]['numTags']        = (string) $entry->numTags;
+            foreach ($entry->link as $link) {
+                switch ($link['rel']) {
+                    case 'self':
+                        $this->_entries[$itemID]['link']['self'] = $link['href'];
+                        break;
+                    case 'alternate':
+                        $this->_entries[$itemID]['link']['alternate'] = $link['href'];
+                        break;
+                    default:
+                        break;
+                }
+            }
+            
+            $item = $entry->content->item;
+            $this->_entries[$itemID]['item']['libraryID']       = $item['libraryID'];
+            $this->_entries[$itemID]['item']['key']             = $item['key'];
+            $this->_entries[$itemID]['item']['itemType']        = $item['itemType'];
+            $this->_entries[$itemID]['item']['dateAdded']       = $item['dateAdded'];
+            $this->_entries[$itemID]['item']['dateModified']    = $item['dateModified'];
+            $this->_entries[$itemID]['item']['createdByUserID'] = $item['createdByUserID'];
+            foreach ($item->field as $field) {
+                $this->_entries[$itemID]['item']['fields'][$field['name']] = (string) $field;
+            }
+            
+            // If there is more than one creator...
+            if (is_array($item->creator)) {
+                foreach ($item->creator as $creator) {
+                    $this->_entries[$itemID]['item']['creators'][$creator['key']]['creatorType'] = $creator['creatorType'];
+                    $this->_entries[$itemID]['item']['creators'][$creator['key']]['index'] = $creator['index'];
+                    $this->_entries[$itemID]['item']['creators'][$creator['key']]['dateAdded'] = $creator->creator['dateAdded'];
+                    $this->_entries[$itemID]['item']['creators'][$creator['key']]['dateModified'] = $creator->creator['dateModified'];
+                    
+                    // need all possible creator fields
+                    $this->_entries[$itemID]['item']['creators'][$creator['key']]['firstName'] = (string) $creator->creator->firstName;
+                    $this->_entries[$itemID]['item']['creators'][$creator['key']]['lastName'] = (string) $creator->creator->lastName;
+                    $this->_entries[$itemID]['item']['creators'][$creator['key']]['name'] = (string) $creator->creator->name;
+                }
+            // If there is only one creator...
+            } else {
+                $this->_entries[$itemID]['item']['creators'][$creator['key']]['creatorType'] = $creator['creatorType'];
+                $this->_entries[$itemID]['item']['creators'][$creator['key']]['index'] = $creator['index'];
+                $this->_entries[$itemID]['item']['creators'][$creator['key']]['dateAdded'] = $creator->creator['dateAdded'];
+                $this->_entries[$itemID]['item']['creators'][$creator['key']]['dateModified'] = $creator->creator['dateModified'];
+                
+                // need all possible creator fields
+                $this->_entries[$itemID]['item']['creators'][$creator['key']]['firstName'] = (string) $creator->creator->firstName;
+                $this->_entries[$itemID]['item']['creators'][$creator['key']]['lastName'] = (string) $creator->creator->lastName;
+                $this->_entries[$itemID]['item']['creators'][$creator['key']]['name'] = (string) $creator->creator->name;
+            }
+        }
+        
+        
+        print_r($this->_entries);
         /*
         $z = new ZoteroImport_Service_Zotero();
         

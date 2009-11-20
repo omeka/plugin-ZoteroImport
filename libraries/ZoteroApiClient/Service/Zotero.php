@@ -25,6 +25,13 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
         $path = "/users/$userId/items/$itemId";
     }
     
+    public function userItemFile($userId, $itemId)
+    {
+        $path = "/users/$userId/items/$itemId/file";
+        $this->setUri(self::URI);
+        return $this->restPost($path);
+    }
+    
     public function group($groupId, array $params = array())
     {
         $path = "/groups/$groupId";
@@ -48,6 +55,13 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
         $path = "/groups/$groupId/items/$itemId";
         $feed = $this->_getFeed($path, $params);
         return $feed->current();
+    }
+    
+    public function groupItemFile($groupId, $itemId)
+    {
+        $path = "/groups/$groupId/items/$itemId/file";
+        $this->setUri(self::URI);
+        return $this->restPost($path);
     }
     
     public function groupItemChildren($groupId, $itemId, array $params = array())

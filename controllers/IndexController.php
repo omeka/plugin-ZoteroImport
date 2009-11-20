@@ -28,8 +28,10 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
                 }
                 
                 // Dispatch the background process.
-                $args = array('id'      => $id, 
-                              'user_id' => current_user()->id);
+                $args = array('id'       => $id, 
+                              'username' => $this->_getParam('username'), 
+                              'password' => $this->_getParam('password'), 
+                              'user_id'  => current_user()->id);
                 ProcessDispatcher::startProcess('ZoteroImport_ImportGroupProcess', null, $args);
                 
                 $this->flashSuccess('Importing the group. This may take a while.');
@@ -90,6 +92,35 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
             'size'        => '60', 
             'required'    => true, 
             'validators'  => array(array('zoteroapiurl', false, array(array('groupItems', 'userItems')))),
+            'decorators'  => array(
+                'ViewHelper', 
+                array('Description', array('tag' => 'p', 'class' => 'explanation')), 
+                'Errors', 
+                array(array('InputsTag' => 'HtmlTag'), array('tag' => 'div', 'class' => 'inputs')), 
+                'Label', 
+                array(array('FieldTag' => 'HtmlTag'), array('tag' => 'div', 'class' => 'field'))
+            )
+        ));
+        
+        $form->addElement('text', 'username', array(
+            'label'       => 'Username', 
+            'class'       => 'textinput', 
+            'size'        => '30', 
+            'decorators'  => array(
+                'ViewHelper', 
+                array('Description', array('tag' => 'p', 'class' => 'explanation')), 
+                'Errors', 
+                array(array('InputsTag' => 'HtmlTag'), array('tag' => 'div', 'class' => 'inputs')), 
+                'Label', 
+                array(array('FieldTag' => 'HtmlTag'), array('tag' => 'div', 'class' => 'field'))
+            )
+        ));
+        
+        $form->addElement('password', 'password', array(
+            'label'       => 'Password', 
+            'description' => 'Enter the relevant Zotero username and password. This is not required, but is necessary to download attachments and to access protected libraries.', 
+            'class'       => 'textinput', 
+            'size'        => '30', 
             'decorators'  => array(
                 'ViewHelper', 
                 array('Description', array('tag' => 'p', 'class' => 'explanation')), 
