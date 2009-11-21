@@ -5,9 +5,24 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
 {
     const URI = 'https://api.zotero.org';
     
-    public function authenticate($username, $password)
+    protected $_username;
+    protected $_password;
+    
+    public function __construct($username = null, $password = null)
     {
-        self::getHttpClient()->setAuth($username, $password);
+        $this->_username = $username;
+        $this->_password = $password;
+        $this->setUri(self::URI);
+    }
+    
+    public function setUsername($username)
+    {
+        $this->_username = $username;
+    }
+    
+    public function setPassword($password)
+    {
+        $this->_password = $password;
     }
     
     public function userItems($userId, array $params = array())
@@ -28,8 +43,9 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
     public function userItemFile($userId, $itemId)
     {
         $path = "/users/$userId/items/$itemId/file";
-        $this->setUri(self::URI);
-        return $this->restPost($path);
+        $this->_setAuth();
+        $this->_setConfig(array('maxredirects' => 0));
+        return $this->restGet($path)->getHeader('Location');
     }
     
     public function group($groupId, array $params = array())
@@ -60,14 +76,28 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
     public function groupItemFile($groupId, $itemId)
     {
         $path = "/groups/$groupId/items/$itemId/file";
-        $this->setUri(self::URI);
-        return $this->restPost($path);
+        $this->_setAuth();
+        $this->_setConfig(array('maxredirects' => 0));
+        return $this->restGet($path)->getHeader('Location');
     }
     
     public function groupItemChildren($groupId, $itemId, array $params = array())
     {
         $path = "/groups/$groupId/items/$itemId/children";
         return $this->_getFeed($path, $params);
+    }
+    
+    protected function _setAuth()
+    {
+        if (!is_string($this->_username) || !is_string($this->_password)) {
+            throw new ZoteroApiClient_Service_Exception('Cannot set authentication without a username and password.');
+        }
+        self::getHttpClient()->setAuth($this->_username, $this->_password);
+    }
+    
+    protected function _setConfig(array $config)
+    {
+        self::getHttpClient()->setConfig($config);
     }
     
     protected function _getFeed($path, $params)

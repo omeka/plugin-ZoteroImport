@@ -11,10 +11,9 @@ class ZoteroImport_ImportGroupProcess extends ProcessAbstract
         // /usr/bin/php /var/www/omekatag/application/core/background.php -p 30 -l initializeRoutes
         // getting a 500 Internal Server Error
         require_once 'ZoteroApiClient/Service/Zotero.php';
-        $z = new ZoteroApiClient_Service_Zotero;
-        $z->authenticate($args['username'], $args['password']);
-        $response = $z->userItemFile(66453, 75201954);
-        print_r($response);exit;
+        $z = new ZoteroApiClient_Service_Zotero($args['username'], $args['password']);
+        $location = $z->userItemFile(66453, 75201954);
+        exit($location);
         
 /******************************************************************************/
         
