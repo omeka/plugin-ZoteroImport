@@ -32,7 +32,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
                               'username' => $this->_getParam('username'), 
                               'password' => $this->_getParam('password'), 
                               'user_id'  => current_user()->id);
-                ProcessDispatcher::startProcess('ZoteroImport_ImportGroupProcess', null, $args);
+                ProcessDispatcher::startProcess('ZoteroImport_ImportGroup', null, $args);
                 
                 $this->flashSuccess('Importing the group. This may take a while.');
                 $this->redirect->goto('index');

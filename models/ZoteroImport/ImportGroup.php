@@ -1,40 +1,41 @@
 <?php
-// question: what exactly are the "API key" and "shared secret"? And where can I find them?
-
-class ZoteroImport_ImportGroupProcess extends ProcessAbstract
+class ZoteroImport_ImportGroup extends ZoteroImport_ImportProcessAbstract
 {
     protected $_feed;
     protected $_entries;
     protected $_params = array('content' => 'full', 'start' => 0);
     
-    public function run($args)
+    public function import()
     {
-        /*
-        require_once 'ZoteroApiClient/Service/Zotero.php';
-        $z = new ZoteroApiClient_Service_Zotero($args['username'], $args['password']);
-        $location = $z->userItemFile(66453, 75201954);
-        exit($location);
-        */
-        
-/******************************************************************************/
-        
-        // /usr/bin/php /var/www/omekatag/application/core/background.php -p 29 -l initializeRoutes
+        // /usr/bin/php /var/www/omekatag/application/core/background.php -p 1 -l initializeRoutes
         require_once 'ZoteroApiClient/Service/Zotero.php';
         $z = new ZoteroApiClient_Service_Zotero;
         
         do {
-            $feed = $z->groupItemsTop($args['id'], array('content' => 'full', 
-                                                         'start'   => $this->_params['start']));
+            $feed = $z->groupItemsTop($this->_args['id'], $this->_params);
             
             // Set the feed and entries more useable formats.
             $this->_setFeed($feed);
             
             // Map Zotero to Omeka.
-            //$this->_map();
+            $this->_import();
             
             echo $this->_feed['link']['self']."\n";
             
         } while ($this->_feed['link']['self'] != $this->_feed['link']['last']);
+    }
+    
+    protected function _import()
+    {
+        foreach ($this->_entries as $entry) {
+            $metadata = array();
+            $elementTexts = array();
+            $fileMetadata = array();
+            foreach ($entry['item']['fields'] as $fieldName => $fieldText) {
+                $elementTexts['Dublin Core'][$this->_fieldMap($fieldName)][] = array('text' => $fieldText, 'html' => false);
+            }
+            //insert_item($metadata, $elementTexts);
+        }
     }
     
     protected function _setFeed(Zend_Feed_Atom $feed)
