@@ -1,15 +1,7 @@
 <?php
-abstract class ZoteroImport_ImportProcessAbstract extends ProcessAbstract
+abstract class ZoteroImport_Abstract
 {
-    protected $_args;
-    
     abstract public function import();
-    
-    public function run($args)
-    {
-        $this->_args = $args;
-        $this->import();
-    }
     
     public function getUserFileLocation($userId, $itemId)
     {
