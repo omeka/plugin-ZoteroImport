@@ -1,5 +1,5 @@
 <?php
-class ZoteroImport_Group extends ZoteroImport_Abstract
+class ZoteroImport_ImportGroup extends ZoteroImport_ImportProcessAbstract
 {
     protected $_feed;
     protected $_entries;
