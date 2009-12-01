@@ -1,19 +1,30 @@
 <?php
 class ZoteroImport_ImportGroup extends ZoteroImport_ImportProcessAbstract
 {
-    protected $_params = array('content' => 'full', 'start' => 0);
-    
     public function import()
     {
         // /usr/bin/php -d memory_limit=500M /var/www/omekatag/application/core/background.php -p 1 -l initializeRoutes
         require_once 'ZoteroApiClient/Service/Zotero.php';
-        $z = new ZoteroApiClient_Service_Zotero;
+        $zotero = new ZoteroApiClient_Service_Zotero($this->_username, $this->_password);
         
         do {
-            $feed = $z->groupItemsTop($this->_args['id'], $this->_params);
             
-            echo $feed->link('self')."\n";
+            // Initialize the start parameter on the first group feed iteration.
+            if (!isset($start)) {
+                $start = 0;
+            }
             
+            // Get the group feed.
+            $feed = $zotero->groupItemsTop($this->_id, array('content' => 'full', 'start' => $start));
+            
+            // Set the start parameter for the next page iteration.
+            if ($feed->link('next')) {
+                $query = parse_url($feed->link('next'), PHP_URL_QUERY);
+                parse_str($query, $query);
+                $start = $query['start'];
+            }
+            
+            // Iterate through this page's entries/items.
             foreach ($feed->entry as $entry) {
                 
                 // Set default insert_item() arguments.
@@ -44,19 +55,37 @@ class ZoteroImport_ImportGroup extends ZoteroImport_ImportProcessAbstract
                     }
                 }
                 
-                // Get attachments (files & notes) via $entry->numChildren(), groups/<groupID>/items/<itemID>/children
+                // Map Zotero children (notes & attachments) to Omeka ??? and files
+                // item 67826721 is an example of an item with an attachment and a note
+                if ($entry->numChildren()) {
+                    $children = $zotero->groupItemChildren($this->_id, $entry->itemID(), array('content' => 'full'));
+                    foreach ($children->entry as $child) {
+                        switch ($child->itemType) {
+                            case 'note':
+                                // map note to what?
+                                break;
+                            case 'attachment':
+                                // get location and metadata, then map to item file
+                                // $zotero->groupItemFile($this->_id, $child->itemID());
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
                 
-                // Get tags via $entry->numTags(), groups/<groupID>/items/<itemID>/tags
+                // Map Zotero tags to Omeka tags, comma-delimited.
+                if ($entry->numTags()) {
+                    $tags = $zotero->groupItemTags($this->_id, $entry->itemID(), array('content' => 'full'));
+                    $tagArray = array();
+                    foreach ($tags->entry as $tag) {
+                        // Remove commas from Zotero tag, or Omeka will bisect it.
+                        $tagArray[] = str_replace(',', ' ', $tag->title);
+                    }
+                    $itemMetadata['tags'] = join(',', $tagArray);
+                }
                 
-                //print_r($elementTexts);
                 //insert_item($itemMetadata, $elementTexts, $fileMetadata);
-            }
-            
-            // Set the start parameter for the next page iteration.
-            if ($feed->link('next')) {
-                $query = parse_url($feed->link('next'), PHP_URL_QUERY);
-                parse_str($query, $query);
-                $this->_params['start'] = $query['start'];
             }
             
         } while ($feed->link('self') != $feed->link('last'));

@@ -87,6 +87,12 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
         return $this->_getFeed($path, $params);
     }
     
+    public function groupItemTags($groupId, $itemId, array $params = array())
+    {
+        $path = "/groups/$groupId/items/$itemId/tags";
+        return $this->_getFeed($path, $params);
+    }
+    
     protected function _setAuth()
     {
         if (!is_string($this->_username) || !is_string($this->_password)) {

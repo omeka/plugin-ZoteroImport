@@ -1,23 +1,21 @@
 <?php
 abstract class ZoteroImport_ImportProcessAbstract extends ProcessAbstract
 {
-    protected $_args;
+    protected $_id;
+    protected $_userId;
+    protected $_username;
+    protected $_password;
     
     abstract public function import();
     
     public function run($args)
     {
-        $this->_args = $args;
+        $this->_id       = $args['id'];
+        $this->_userId   = $args['user_id'];
+        $this->_username = $args['username'];
+        $this->_password = $args['password'];
+        
         $this->import();
-    }
-    
-    public function getUserFileLocation($userId, $itemId)
-    {
-        require_once 'ZoteroApiClient/Service/Zotero.php';
-        $z = new ZoteroApiClient_Service_Zotero($this->_args['username'], 
-                                                $this->_args['password']);
-        // ex. 66453, 75201954
-        return $z->userItemFile($userId, $itemId);
     }
     
     protected function _fieldMap($fieldName)
