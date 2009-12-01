@@ -174,7 +174,7 @@ abstract class ZoteroImport_ImportProcessAbstract extends ProcessAbstract
             
             // [unknown]
             default:
-                $elementName = '[unknown]';
+                $elementName = false;
                 break;
         }
         
