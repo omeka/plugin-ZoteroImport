@@ -15,60 +15,67 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
             return $this->render('index');
         }
         
-        $type = $this->_getLibraryType($this->_getParam('feedUrl'));
-        $id   = $this->_getLibraryId($this->_getParam('feedUrl'));
-        
-        switch ($type) {
-            case 'groups':
+        $libraryId   = $this->_getLibraryId();
+        $libraryType = $this->_getLibraryType();
                 
-                // Verify that there are no errors when requesting this group.
-                if (!$this->_verifyGroup($id)) {
-                    $this->view->assign('form', $form);
-                    return $this->render('index');
-                }
-                
-                // Dispatch the background process.
-                $args = array('id'       => $id, 
-                              'username' => $this->_getParam('username'), 
-                              'password' => $this->_getParam('password'), 
-                              'user_id'  => current_user()->id);
-                ProcessDispatcher::startProcess('ZoteroImport_ImportGroup', null, $args);
-                
-                $this->flashSuccess('Importing the group. This may take a while.');
-                $this->redirect->goto('index');
-                break;
-            
-            case 'users':
-                $this->flashError('Error: user import is not yet supported.');
-                break;
-            default:
-                $this->flashError('Error: unknown import.');
-                break;
+        // Verify that there are no errors when requesting this group.
+        if (!$this->_verifyLibrary($libraryId, $libraryType)) {
+            $this->view->assign('form', $form);
+            return $this->render('index');
         }
+        
+        // Dispatch the background process.
+        $args = array('libraryId'   => $libraryId, 
+                      'libraryType' => $libraryType, 
+                      'username'    => $this->_getParam('username'), 
+                      'password'    => $this->_getParam('password'));
+        ProcessDispatcher::startProcess('ZoteroImport_ImportLibraryProcess', null, $args);
+        
+        $this->flashSuccess('Importing the library. This may take a while.');
+        $this->redirect->goto('index');
         
         // Assume an error occured.
         $this->view->assign('form', $form);
         return $this->render('index');
     }
     
-    protected function _getLibraryType($feedUrl)
+    protected function _getLibraryType()
     {
-        preg_match('/groups|users/', $feedUrl, $match);
+        preg_match('/groups|users/', $this->_getParam('feedUrl'), $match);
+        switch ($match[0]) {
+            case 'groups':
+                $libraryType = 'group';
+                break;
+            case 'users':
+                $libraryType = 'user';
+                break;
+            default:
+                break;
+        }
+        return $libraryType;
+    }
+    
+    protected function _getLibraryId()
+    {
+        preg_match('/\d+/', $this->_getParam('feedUrl'), $match);
         return $match[0];
     }
     
-    protected function _getLibraryId($feedUrl)
-    {
-        preg_match('/\d+/', $feedUrl, $match);
-        return $match[0];
-    }
-    
-    protected function _verifyGroup($id)
+    protected function _verifyLibrary($libraryId, $libraryType)
     {
         try {
             require_once 'ZoteroApiClient/Service/Zotero.php';
             $z = new ZoteroApiClient_Service_Zotero;
-            $feed = $z->group($id); // a thrown exception means error
+            switch ($libraryType) {
+                case 'group':
+                    $z->group($libraryId); // a thrown exception means error
+                    break;
+                case 'user':
+                    $z->userItems($libraryId);
+                    break;
+                default:
+                    break;
+            }
             return true;
         } catch (Exception $e) {
             $this->flashError($e->getMessage());

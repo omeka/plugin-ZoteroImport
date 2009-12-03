@@ -28,16 +28,31 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
     public function userItems($userId, array $params = array())
     {
         $path = "/users/$userId/items";
+        return $this->_getFeed($path, $params);
     }
     
     public function userItemsTop($userId, array $params = array())
     {
         $path = "/users/$userId/items/top";
+        return $this->_getFeed($path, $params);
     }
     
     public function userItem($userId, $itemId, array $params = array())
     {
         $path = "/users/$userId/items/$itemId";
+        return $this->_getFeed($path, $params);
+    }
+    
+    public function userItemTags($userId, $itemId, array $params = array())
+    {
+        $path = "/users/$userId/items/$itemId/tags";
+        return $this->_getFeed($path, $params);
+    }
+    
+    public function userItemChildren($userId, $itemId, array $params = array())
+    {
+        $path = "/users/$userId/items/$itemId/children";
+        return $this->_getFeed($path, $params);
     }
     
     public function userItemFile($userId, $itemId)
@@ -95,9 +110,6 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
     
     protected function _setAuth()
     {
-        if (!is_string($this->_username) || !is_string($this->_password)) {
-            throw new ZoteroApiClient_Service_Exception('Cannot set authentication without a username and password.');
-        }
         self::getHttpClient()->setAuth($this->_username, $this->_password);
     }
     
