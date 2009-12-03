@@ -10,6 +10,8 @@ abstract class ZoteroImport_ImportProcessAbstract extends ProcessAbstract
     
     public function run($args)
     {
+        ini_set('memory_limit', '500M');
+        
         $this->_id       = $args['id'];
         $this->_userId   = $args['user_id'];
         $this->_username = $args['username'];
@@ -18,7 +20,7 @@ abstract class ZoteroImport_ImportProcessAbstract extends ProcessAbstract
         $this->import();
     }
     
-    protected function _fieldMap($fieldName)
+    protected function _getElementName($fieldName)
     {
         // Map to Dublin Core.
         switch ($fieldName) {
@@ -87,6 +89,7 @@ abstract class ZoteroImport_ImportProcessAbstract extends ProcessAbstract
                 break;
             
             // Type
+            case 'itemType':
             case 'thesisType':
             case 'letterType':
             case 'manuscriptType':
@@ -113,6 +116,7 @@ abstract class ZoteroImport_ImportProcessAbstract extends ProcessAbstract
                 break;
             
             // Creator
+            case 'creator':
             case 'company':
             case 'legislativeBody':
             case 'court':
@@ -177,5 +181,20 @@ abstract class ZoteroImport_ImportProcessAbstract extends ProcessAbstract
         }
         
         return $elementName;
+    }
+    
+    protected function _contentXpath(Zend_Feed_Element $content, $xpath, $fetchOne = false)
+    {
+        $xml = simplexml_load_string($content->div->saveXml());
+        $xml->registerXPathNamespace('default', 'http://www.w3.org/1999/xhtml');
+        
+        // Experimental: namespace each node in the xpath.
+        //$xpath = preg_replace('#(/)([a-z])#i', '$1xhtml:$2', $xpath);
+        
+        $result = $xml->xpath($xpath);
+        if ($fetchOne) {
+            return $result[0];
+        }
+        return $result;
     }
 }
