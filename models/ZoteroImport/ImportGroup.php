@@ -35,7 +35,7 @@ class ZoteroImport_ImportGroup extends ZoteroImport_ImportProcessAbstract
                 $itemMetadata = array();
                 $elementTexts = array();
                 $fileMetadata = array('file_transfer_type'   => 'Url', 
-                                      'ignore_invalid_files' => true);
+                                      'file_ingest_options'  => array('ignore_invalid_files' => true));
                 
                 // Map the title.
                 $elementTexts['Dublin Core']['Title'][] = array('text' => $item->title(), 'html' => false);
@@ -73,7 +73,10 @@ class ZoteroImport_ImportGroup extends ZoteroImport_ImportProcessAbstract
                             // If the URL does not exist, the attachment is a imported file or imported URL
                             } else {
                                 $location = $zotero->groupItemFile($this->_id, $child->itemID());
-                                $fileMetadata['files'][] = $location;
+                                // Even though ignore_invalid_files is set to true, avoid the "fopen(): Filename cannot be empty" error by setting the URL only if one exists.
+                                if ($location) {
+                                    $fileMetadata['files'][] = $location;
+                                }
                             }
                         }
                     }
