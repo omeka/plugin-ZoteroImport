@@ -1,9 +1,12 @@
 <?php
 class ZoteroImport_IndexController extends Omeka_Controller_Action
 {    
+    const PROCESS_CLASS = 'ZoteroImport_ImportLibraryProcess';
+    
     public function indexAction()
     {
         $this->view->assign('form', $this->_getFeedForm());
+        $this->view->assign('processes', $this->getTable('Process')->findByClass(self::PROCESS_CLASS));
     }
     
     public function importLibraryAction()
@@ -21,23 +24,42 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         // Verify that there are no errors when requesting this group.
         if (!$this->_verifyLibrary($libraryId, $libraryType)) {
             $this->view->assign('form', $form);
+            $this->view->assign('processes', $this->getTable('Process')->findByClass(self::PROCESS_CLASS));
             return $this->render('index');
         }
         
+        // Create the collection.
+        $collection = $this->_getCollection($libraryId, $libraryType);
+        
         // Dispatch the background process.
-        $args = array('libraryId'   => $libraryId, 
-                      'libraryType' => $libraryType, 
-                      'username'    => $this->_getParam('username'), 
-                      'password'    => $this->_getParam('password'));
-        ProcessDispatcher::startProcess('ZoteroImport_ImportLibraryProcess', null, $args);
+        $args = array('libraryId'      => $libraryId, 
+                      'libraryType'    => $libraryType, 
+                      'collectionName' => $collection->name, 
+                      'collectionId'   => $collection->id, 
+                      'username'       => $this->_getParam('username'), 
+                      'password'       => $this->_getParam('password'));
+        ProcessDispatcher::startProcess(self::PROCESS_CLASS, null, $args);
         
         $this->flashSuccess('Importing the library. This may take a while.');
         $this->redirect->goto('index');
-        
-        // Assume an error occured.
-        $this->view->assign('form', $form);
-        return $this->render('index');
     }
+    
+    // Commented out until this bug is fixed: https://omeka.org/trac/ticket/868
+    /*
+    public function stopProcessAction()
+    {
+        $process = $this->getTable('Process')->find($this->_getParam('processId'));
+        if (ProcessDispatcher::stopProcess($process)) {
+            $this->flashSuccess('The process has been stopped.');
+            $this->redirect->goto('index');
+        } else {
+            $this->flashError('The process could not be stopped.');
+            $this->view->assign('form', $this->_getFeedForm());
+            $this->view->assign('processes', $this->getTable('Process')->findByClass(self::PROCESS_CLASS));
+            return $this->render('index');
+        }
+    }
+    */
     
     protected function _getLibraryType()
     {
@@ -59,6 +81,28 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
     {
         preg_match('/\d+/', $this->_getParam('feedUrl'), $match);
         return $match[0];
+    }
+    
+    protected function _getCollection($libraryId, $libraryType)
+    {
+        require_once 'ZoteroApiClient/Service/Zotero.php';
+        $z = new ZoteroApiClient_Service_Zotero;
+        
+        $collectionMetadata = array('public' => true);
+        switch ($libraryType) {
+            case 'group':
+                $feed = $z->group($libraryId);
+                $collectionMetadata['name'] = $feed->current()->title();
+                break;
+            case 'user':
+                // An API "items" method does not exist at this time.
+                $feed = $z->userItems($libraryId);
+                $collectionMetadata['name'] = trim(preg_replace('#.+/(.+)/.+#', '$1', $feed->title()));
+                break;
+            default:
+                break;
+        }
+        return insert_collection($collectionMetadata);
     }
     
     protected function _verifyLibrary($libraryId, $libraryType)
