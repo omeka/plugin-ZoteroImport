@@ -4,7 +4,6 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
     protected $_client;
     protected $_libraryId;
     protected $_libraryType;
-    protected $_userId;
     
     public function run($args)
     {
@@ -21,6 +20,23 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
     
     protected function _import()
     {
+        $collectionMetadata = array('public' => true);
+        switch ($this->_libraryType) {
+            case 'group':
+                $feed = $this->_client->group($this->_libraryId);
+                $collectionMetadata['name'] = $feed->current()->title();
+                break;
+            case 'user':
+                // An API "items" method does not exist at this time.
+                $feed = $this->_client->userItems($this->_libraryId);
+                $collectionMetadata['name'] = trim(preg_replace('#.+/(.+)/.+#', '$1', $feed->title()));
+                break;
+            default:
+                break;
+        }
+        $collection = insert_collection($collectionMetadata);
+        $this->_collectionId = $collection->id;
+        
         do {
             
             // Initialize the start parameter on the first group feed iteration.
@@ -43,7 +59,7 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
             foreach ($feed->entry as $item) {
                 
                 // Set default insert_item() arguments.
-                $itemMetadata = array();
+                $itemMetadata = array('collection_id' => $this->_collectionId);
                 $elementTexts = array();
                 $fileMetadata = array('file_transfer_type'  => 'Url', 
                                       'file_ingest_options' => array('ignore_invalid_files' => true));
