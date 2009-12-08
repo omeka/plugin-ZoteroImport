@@ -1,10 +1,15 @@
 <?php
 class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
 {
-    protected $_client;
     protected $_libraryId;
     protected $_libraryType;
     protected $_collectionId;
+    
+    protected $_client;
+    
+    protected $_itemMetadata;
+    protected $_elementTexts;
+    protected $_fileMetadata;
     
     public function run($args)
     {
@@ -44,22 +49,27 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
             foreach ($feed->entry as $item) {
                 
                 // Set default insert_item() arguments.
-                $itemMetadata = array('collection_id' => $this->_collectionId, 
-                                      'public'        => true);
-                $elementTexts = array();
-                $fileMetadata = array('file_transfer_type'  => 'Url', 
-                                      'file_ingest_options' => array('ignore_invalid_files' => true));
+                $this->_itemMetadata = array('collection_id' => $this->_collectionId, 
+                                             'public'        => true);
+                $this->_elementTexts = array();
+                $this->_fileMetadata = array('file_transfer_type'  => 'Url', 
+                                             'file_ingest_options' => array('ignore_invalid_files' => true));
                 
                 // Map the title.
-                $elementTexts['Dublin Core']['Title'][] = array('text' => $item->title(), 'html' => false);
+                $this->_elementTexts['Dublin Core']['Title'][] = array('text' => $item->title(), 'html' => false);
+                
+                // Map top-level attachment item.
+                if ('attachment' == $item->itemType()) {
+                    $this->_mapAttachment($item);
+                }
                 
                 // Map the Zotero API field nodes to Omeka elements.
                 if (is_array($item->content->div->table->tr)) {
                     foreach ($item->content->div->table->tr as $tr) {
-                        $elementTexts = $this->_mapFields($tr, $elementTexts);
+                        $this->_mapFields($tr);
                     }
                 } else {
-                    $elementTexts = $this->_mapFields($item->content->div->table->tr, $elementTexts);
+                    $this->_mapFields($item->content->div->table->tr);
                 }
                 
                 // Map Zotero tags to Omeka tags, comma-delimited.
@@ -72,7 +82,7 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
                         // they are separate tags.
                         $tagArray[] = str_replace(',', ' ', $tag->title);
                     }
-                    $itemMetadata['tags'] = join(',', $tagArray);
+                    $this->_itemMetadata['tags'] = join(',', $tagArray);
                 }
                 
                 // Map Zotero children (notes & attachments).
@@ -84,19 +94,10 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
                             case 'note':
                                 $noteXpath = '//default:tr[@class="note"]/default:td/default:p';
                                 $note = $this->_contentXpath($child->content, $noteXpath, true);
-                                $elementTexts['Zotero']['Note'][] = array('text' => (string) $note, 'html' => false);
+                                $this->_elementTexts['Zotero']['Note'][] = array('text' => (string) $note, 'html' => false);
                                 break;
                             case 'attachment':
-                                $urlXpath = '//default:tr[@class="url"]/default:td';
-                                $url = $this->_contentXpath($child->content, $urlXpath, true);
-                                if ($url) {
-                                    $elementTexts['Dublin Core']['Identifier'][] = array('text' => (string) $url, 'html' => false);
-                                }
-                                $method = "{$this->_libraryType}ItemFile";
-                                $location = $this->_client->$method($this->_libraryId, $child->itemID());
-                                if ($location) {
-                                    $fileMetadata['files'][] = array('source' => $location, 'name' => $child->title());
-                                }
+                                $this->_mapAttachment($child);
                                 break;
                             default:
                                 break;
@@ -105,13 +106,13 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
                 }
                 
                 // Insert the item.
-                insert_item($itemMetadata, $elementTexts, $fileMetadata);
+                insert_item($this->_itemMetadata, $this->_elementTexts, $this->_fileMetadata);
             }
             
         } while ($feed->link('self') != $feed->link('last'));
     }
     
-    protected function _mapFields(Zend_Feed_Element $tr, array $elementTexts)
+    protected function _mapFields(Zend_Feed_Element $tr)
     {
         // Only map those field nodes that exist in the mapping 
         // array.
@@ -119,23 +120,35 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
             
             // Map the field nodes to the correlating Dublin Core
             // element set field elements.
-            $elementTexts['Dublin Core'][$elementName['dc']][] = array('text' => $tr->td(), 'html' => false);
+            $this->_elementTexts['Dublin Core'][$elementName['dc']][] = array('text' => $tr->td(), 'html' => false);
             
             // The creator node is formatted differently than other 
             // field nodes. Account for this by mapping a creator 
             // node to the correlating Zotero element set creator 
             // element.
             if ('creator' == $tr['class'] && in_array($tr->th(), $elementName['z'])) {
-                $elementTexts['Zotero'][$tr->th()][] = array('text' => $tr->td(), 'html' => false);
+                $this->_elementTexts['Zotero'][$tr->th()][] = array('text' => $tr->td(), 'html' => false);
             
             // Map the field nodes to the correlating Zotero element 
             // set field elements.
             } else {
-                $elementTexts['Zotero'][$elementName['z']][] = array('text' => $tr->td(), 'html' => false);
+                $this->_elementTexts['Zotero'][$elementName['z']][] = array('text' => $tr->td(), 'html' => false);
             }
         }
-        
-        return $elementTexts;
+   }
+   
+   protected function _mapAttachment(Zend_Feed_Element $element)
+   {
+        $urlXpath = '//default:tr[@class="url"]/default:td';
+        $url = $this->_contentXpath($element->content, $urlXpath, true);
+        if ($url) {
+            $this->_elementTexts['Dublin Core']['Identifier'][] = array('text' => (string) $url, 'html' => false);
+        }
+        $method = "{$this->_libraryType}ItemFile";
+        $location = $this->_client->$method($this->_libraryId, $element->itemID());
+        if ($location) {
+            $this->_fileMetadata['files'][] = array('source' => $location, 'name' => $element->title());
+        }
    }
     
     protected function _getElementName($fieldName)
