@@ -54,29 +54,12 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
                 $elementTexts['Dublin Core']['Title'][] = array('text' => $item->title(), 'html' => false);
                 
                 // Map the Zotero API field nodes to Omeka elements.
-                foreach ($item->content->div->table->tr as $tr) {
-                    
-                    // Only map those field nodes that exist in the mapping 
-                    // array.
-                    if ($elementName = $this->_getElementName($tr['class'])) {
-                        
-                        // Map the field nodes to the correlating Dublin Core
-                        // element set field elements.
-                        $elementTexts['Dublin Core'][$elementName['dc']][] = array('text' => $tr->td(), 'html' => false);
-                        
-                        // The creator node is formatted differently than other 
-                        // field nodes. Account for this by mapping a creator 
-                        // node to the correlating Zotero element set creator 
-                        // element.
-                        if ('creator' == $tr['class'] && in_array($tr->th(), $elementName['z'])) {
-                            $elementTexts['Zotero'][$tr->th()][] = array('text' => $tr->td(), 'html' => false);
-                        
-                        // Map the field nodes to the correlating Zotero element 
-                        // set field elements.
-                        } else {
-                            $elementTexts['Zotero'][$elementName['z']][] = array('text' => $tr->td(), 'html' => false);
-                        }
+                if (is_array($item->content->div->table->tr)) {
+                    foreach ($item->content->div->table->tr as $tr) {
+                        $elementTexts = $this->_mapFields($tr, $elementTexts);
                     }
+                } else {
+                    $elementTexts = $this->_mapFields($item->content->div->table->tr, $elementTexts);
                 }
                 
                 // Map Zotero tags to Omeka tags, comma-delimited.
@@ -127,6 +110,33 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
             
         } while ($feed->link('self') != $feed->link('last'));
     }
+    
+    protected function _mapFields(Zend_Feed_Element $tr, array $elementTexts)
+    {
+        // Only map those field nodes that exist in the mapping 
+        // array.
+        if ($elementName = $this->_getElementName($tr['class'])) {
+            
+            // Map the field nodes to the correlating Dublin Core
+            // element set field elements.
+            $elementTexts['Dublin Core'][$elementName['dc']][] = array('text' => $tr->td(), 'html' => false);
+            
+            // The creator node is formatted differently than other 
+            // field nodes. Account for this by mapping a creator 
+            // node to the correlating Zotero element set creator 
+            // element.
+            if ('creator' == $tr['class'] && in_array($tr->th(), $elementName['z'])) {
+                $elementTexts['Zotero'][$tr->th()][] = array('text' => $tr->td(), 'html' => false);
+            
+            // Map the field nodes to the correlating Zotero element 
+            // set field elements.
+            } else {
+                $elementTexts['Zotero'][$elementName['z']][] = array('text' => $tr->td(), 'html' => false);
+            }
+        }
+        
+        return $elementTexts;
+   }
     
     protected function _getElementName($fieldName)
     {
