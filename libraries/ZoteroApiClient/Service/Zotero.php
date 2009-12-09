@@ -7,11 +7,13 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
     
     protected $_username;
     protected $_password;
+    protected $_privateKey;
     
-    public function __construct($username = null, $password = null)
+    public function __construct($username = null, $password = null, $privateKey = null)
     {
-        $this->_username = $username;
-        $this->_password = $password;
+        $this->_username   = $username;
+        $this->_password   = $password;
+        $this->_privateKey = $privateKey;
         $this->setUri(self::URI);
     }
     
@@ -23,6 +25,11 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
     public function setPassword($password)
     {
         $this->_password = $password;
+    }
+    
+    public function setPrivateKey($privateKey)
+    {
+        $this->_privateKey = $privateKey;
     }
     
     public function userItems($userId, array $params = array())
@@ -120,6 +127,10 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
     
     protected function _getFeed($path, $params)
     {
+        if (!isset($params['key']) && $this->_privateKey) {
+            $params['key'] = $this->_privateKey;
+        }
+        
         require_once 'Zend/Feed/Atom.php';
         return new Zend_Feed_Atom($this->_getUri($path, $params));
     }

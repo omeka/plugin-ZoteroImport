@@ -15,7 +15,8 @@ head($head);
         <!--<th></th>-->
     </thead>
     <tbody>
-    <?php foreach ($this->processes as $process): ?>
+    <?php $processes = array_reverse($this->processes); ?>
+    <?php foreach ($processes as $process): ?>
     <?php $args = $process->getArguments(); ?>
     <tr>
         <td><a href="<?php echo $this->url(array('module'     => 'default', 

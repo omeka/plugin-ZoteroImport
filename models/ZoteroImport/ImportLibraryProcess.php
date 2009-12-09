@@ -20,7 +20,9 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
         $this->_collectionId = $args['collectionId'];
         
         require_once 'ZoteroApiClient/Service/Zotero.php';
-        $this->_client = new ZoteroApiClient_Service_Zotero($args['username'], $args['password']);
+        $this->_client = new ZoteroApiClient_Service_Zotero($args['username'], 
+                                                            $args['password'], 
+                                                            $args['privateKey']);
         
         $this->_import();
     }
@@ -106,7 +108,8 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
                 }
                 
                 // Insert the item.
-                insert_item($this->_itemMetadata, $this->_elementTexts, $this->_fileMetadata);
+                $item = insert_item($this->_itemMetadata, $this->_elementTexts, $this->_fileMetadata);
+                release_object($item);
             }
             
         } while ($feed->link('self') != $feed->link('last'));

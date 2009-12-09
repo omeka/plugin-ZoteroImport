@@ -22,14 +22,18 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         $libraryType = $this->_getLibraryType();
                 
         // Verify that there are no errors when requesting this group.
-        if (!$this->_verifyLibrary($libraryId, $libraryType)) {
+        if (!$this->_verifyLibrary($libraryId, 
+                                   $libraryType, 
+                                   $this->_getParam('private_key'))) {
             $this->view->assign('form', $form);
             $this->view->assign('processes', $this->getTable('Process')->findByClass(self::PROCESS_CLASS));
             return $this->render('index');
         }
         
         // Create the collection.
-        $collection = $this->_getCollection($libraryId, $libraryType);
+        $collection = $this->_getCollection($libraryId, 
+                                            $libraryType, 
+                                            $this->_getParam('private_key'));
         
         // Dispatch the background process.
         $args = array('libraryId'      => $libraryId, 
@@ -37,7 +41,8 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
                       'collectionName' => $collection->name, 
                       'collectionId'   => $collection->id, 
                       'username'       => $this->_getParam('username'), 
-                      'password'       => $this->_getParam('password'));
+                      'password'       => $this->_getParam('password'), 
+                      'privateKey'     => $this->_getParam('private_key'));
         ProcessDispatcher::startProcess(self::PROCESS_CLASS, null, $args);
         
         $this->flashSuccess('Importing the library. This may take a while.');
@@ -83,46 +88,30 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         return $match[0];
     }
     
-    protected function _getCollection($libraryId, $libraryType)
+    protected function _getCollection($libraryId, $libraryType, $privateKey)
     {
         require_once 'ZoteroApiClient/Service/Zotero.php';
-        $z = new ZoteroApiClient_Service_Zotero;
-        
-        $collectionMetadata = array('public' => true);
-        switch ($libraryType) {
-            case 'group':
-                $feed = $z->group($libraryId);
-                $collectionMetadata['name'] = $feed->current()->title();
-                break;
-            case 'user':
-                // An API "items" method does not exist at this time.
-                $feed = $z->userItems($libraryId);
-                $collectionMetadata['name'] = trim(preg_replace('#.+/(.+)/.+#', '$1', $feed->title()));
-                break;
-            default:
-                break;
-        }
+        $z = new ZoteroApiClient_Service_Zotero(null, null, $privateKey);
+        $method = "{$libraryType}Items";
+        $feed = $z->$method($libraryId);
+        $collectionMetadata = array('public' => true, 
+                                    'name'   => trim(preg_replace('#.+/(.+)/.+#', '$1', $feed->title())));
         return insert_collection($collectionMetadata);
     }
     
-    protected function _verifyLibrary($libraryId, $libraryType)
+    protected function _verifyLibrary($libraryId, $libraryType, $privateKey)
     {
         try {
             require_once 'ZoteroApiClient/Service/Zotero.php';
-            $z = new ZoteroApiClient_Service_Zotero;
-            switch ($libraryType) {
-                case 'group':
-                    $z->group($libraryId); // a thrown exception means error
-                    break;
-                case 'user':
-                    $z->userItems($libraryId);
-                    break;
-                default:
-                    break;
+            $z = new ZoteroApiClient_Service_Zotero(null, null, $privateKey);
+            $method = "{$libraryType}Items";
+            $feed = $z->$method($libraryId);
+            if (0 == $feed->count()) {
+                throw new Exception('No items found for this library');
             }
             return true;
         } catch (Exception $e) {
-            $this->flashError($e->getMessage());
+            $this->flashError($e->getMessage().'. This may indicate that the library does not exist, you do not have access to the library, or the private key is invalid.');
             return false;
         }
     }
@@ -138,11 +127,26 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         
         $form->addElement('text', 'feedUrl', array(
             'label'       => 'Zotero Atom Feed URL', 
-            'description' => 'Enter the Atom Feed URL of the Zotero library you want to import.', 
+            'description' => 'Enter the Atom Feed URL of the Zotero library you want to import. This URL can be found in the library page of the Zotero website, under "Subscribe to this feed."', 
             'class'       => 'textinput', 
             'size'        => '60', 
             'required'    => true, 
             'validators'  => array(array('zoteroapiurl', false, array(array('groupItems', 'userItems')))),
+            'decorators'  => array(
+                'ViewHelper', 
+                array('Description', array('tag' => 'p', 'class' => 'explanation')), 
+                'Errors', 
+                array(array('InputsTag' => 'HtmlTag'), array('tag' => 'div', 'class' => 'inputs')), 
+                'Label', 
+                array(array('FieldTag' => 'HtmlTag'), array('tag' => 'div', 'class' => 'field'))
+            )
+        ));
+        
+        $form->addElement('password', 'private_key', array(
+            'label'       => 'Private Key', 
+            'description' => 'Enter your Zotero private key for this library. This is not required, but is necessary to access protected user libraries (including your own). Warning: private keys for protected group libraries are currently not supported. You will not be able to import protected group libraries.', 
+            'class'       => 'textinput', 
+            'size'        => '30', 
             'decorators'  => array(
                 'ViewHelper', 
                 array('Description', array('tag' => 'p', 'class' => 'explanation')), 
@@ -169,7 +173,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         
         $form->addElement('password', 'password', array(
             'label'       => 'Password', 
-            'description' => 'Enter the relevant Zotero username and password. This is not required, but is necessary to download attachments and to access protected libraries.', 
+            'description' => 'Enter your Zotero username and password. This is not required, but is necessary to download attachments (files and web snapshots). This will only work for libraries to which you have access.', 
             'class'       => 'textinput', 
             'size'        => '30', 
             'decorators'  => array(
