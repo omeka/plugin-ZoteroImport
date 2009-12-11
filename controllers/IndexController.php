@@ -127,7 +127,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         
         $form->addElement('text', 'feedUrl', array(
             'label'       => 'Zotero Atom Feed URL', 
-            'description' => 'Enter the Atom Feed URL of the Zotero user or group library you want to import. This URL can be found on the library page of the Zotero website, under "Subscribe to this feed."', 
+            'description' => 'Enter the Atom feed URL of the Zotero user or group library you want to import. This URL can be found on the library page of the Zotero website, under "Subscribe to this feed."', 
             'class'       => 'textinput', 
             'size'        => '60', 
             'required'    => true, 
@@ -173,7 +173,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         
         $form->addElement('password', 'password', array(
             'label'       => 'Password', 
-            'description' => 'Enter your Zotero username and password. This is not required, but is necessary to download attachments (files and web snapshots). This will only work for libraries to which you have access.', 
+            'description' => 'Enter your Zotero username and password. This is not required, but is necessary to download attachments (files and web snapshots). Warning: this will only work for your user library and group libraries you have joined.', 
             'class'       => 'textinput', 
             'size'        => '30', 
             'decorators'  => array(
