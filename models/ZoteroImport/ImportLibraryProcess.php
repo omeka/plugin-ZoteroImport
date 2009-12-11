@@ -121,21 +121,24 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
         // array.
         if ($elementName = $this->_getElementName($tr['class'])) {
             
-            // Map the field nodes to the correlating Dublin Core
-            // element set field elements.
-            $this->_elementTexts['Dublin Core'][$elementName['dc']][] = array('text' => $tr->td(), 'html' => false);
+            if ($elementName['dc']) {
+                // Map the field nodes to the correlating Dublin Core element 
+                // set field elements.
+                $this->_elementTexts['Dublin Core'][$elementName['dc']][] = array('text' => $tr->td(), 'html' => false);
+            }
             
-            // The creator node is formatted differently than other 
-            // field nodes. Account for this by mapping a creator 
-            // node to the correlating Zotero element set creator 
-            // element.
-            if ('creator' == $tr['class'] && in_array($tr->th(), $elementName['z'])) {
-                $this->_elementTexts['Zotero'][$tr->th()][] = array('text' => $tr->td(), 'html' => false);
-            
-            // Map the field nodes to the correlating Zotero element 
-            // set field elements.
-            } else {
-                $this->_elementTexts['Zotero'][$elementName['z']][] = array('text' => $tr->td(), 'html' => false);
+            if ($elementName['z']) {
+                // The creator node is formatted differently than other field 
+                // nodes. Account for this by mapping a creator node to the 
+                // correlating Zotero element set creator element.
+                if ('creator' == $tr['class'] && in_array($tr->th(), $elementName['z'])) {
+                    $this->_elementTexts['Zotero'][$tr->th()][] = array('text' => $tr->td(), 'html' => false);
+                
+                // Map the field nodes to the correlating Zotero element set 
+                // field elements.
+                } else {
+                    $this->_elementTexts['Zotero'][$elementName['z']][] = array('text' => $tr->td(), 'html' => false);
+                }
             }
         }
    }

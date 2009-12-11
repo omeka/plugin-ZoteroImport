@@ -127,7 +127,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         
         $form->addElement('text', 'feedUrl', array(
             'label'       => 'Zotero Atom Feed URL', 
-            'description' => 'Enter the Atom Feed URL of the Zotero library you want to import. This URL can be found in the library page of the Zotero website, under "Subscribe to this feed."', 
+            'description' => 'Enter the Atom Feed URL of the Zotero user or group library you want to import. This URL can be found on the library page of the Zotero website, under "Subscribe to this feed."', 
             'class'       => 'textinput', 
             'size'        => '60', 
             'required'    => true, 

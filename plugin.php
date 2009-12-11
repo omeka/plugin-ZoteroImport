@@ -136,6 +136,7 @@ class ZoteroImportPlugin
         'volume'              => array('dc' => 'Source',      'z' => 'Volume'), 
         'websiteTitle'        => array('dc' => 'Source',      'z' => 'Website Title'), 
         'websiteType'         => array('dc' => 'Type',        'z' => 'Website Type'), 
+        'note'                => array('dc' => null,          'z' => 'Note')
     );
     
     public static function install()
@@ -152,8 +153,6 @@ class ZoteroImportPlugin
                 $elements[] = array('name' => $map['z'], 'data_type' => 'Tiny Text');
             }
         }
-        // Add the Note element, which is separate from the separate fields.
-        $elements[] = array('name' => 'Note', 'data_type' => 'Tiny Text');
         insert_element_set($elementSetMetadata, $elements);
     }
     
