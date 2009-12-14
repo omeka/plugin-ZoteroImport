@@ -4,6 +4,7 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
     protected $_libraryId;
     protected $_libraryType;
     protected $_collectionId;
+    protected $_zoteroImportId;
     
     protected $_client;
     
@@ -15,9 +16,10 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
     {
         ini_set('memory_limit', '500M');
         
-        $this->_libraryId    = $args['libraryId'];
-        $this->_libraryType  = $args['libraryType'];
-        $this->_collectionId = $args['collectionId'];
+        $this->_libraryId      = $args['libraryId'];
+        $this->_libraryType    = $args['libraryType'];
+        $this->_collectionId   = $args['collectionId'];
+        $this->_zoteroImportId = $args['zoteroImportId'];
         
         require_once 'ZoteroApiClient/Service/Zotero.php';
         $this->_client = new ZoteroApiClient_Service_Zotero($args['privateKey']);
@@ -106,8 +108,22 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
                 }
                 
                 // Insert the item.
-                $item = insert_item($this->_itemMetadata, $this->_elementTexts, $this->_fileMetadata);
+                $omekaItem = insert_item($this->_itemMetadata, 
+                                         $this->_elementTexts, 
+                                         $this->_fileMetadata);
+                
+                // Save the Zotero item.
+                require_once 'ZoteroImportItem.php';
+                $zoteroItem = new ZoteroImportItem;
+                $zoteroItem->import_id      = $this->_zoteroImportId;
+                $zoteroItem->item_id        = $omekaItem->id;
+                $zoteroItem->zotero_item_id = $item->itemID();
+                $zoteroItem->updated        = strtotime($item->updated());
+                $zoteroItem->save();
+                
                 release_object($item);
+                release_object($omekaItem);
+                release_object($zoteroItem);
             }
             
         } while ($feed->link('self') != $feed->link('last'));
@@ -147,6 +163,7 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
         $url = $this->_contentXpath($element->content, $urlXpath, true);
         if ($url) {
             $this->_elementTexts['Dublin Core']['Identifier'][] = array('text' => (string) $url, 'html' => false);
+            $this->_elementTexts['Zotero']['URL'][] = array('text' => (string) $url, 'html' => false);
         }
         $method = "{$this->_libraryType}ItemFile";
         $location = $this->_client->$method($this->_libraryId, $element->itemID());

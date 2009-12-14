@@ -31,17 +31,28 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         }
         
         // Create the collection.
-        $collection = $this->_getCollection($libraryId, 
-                                            $libraryType, 
-                                            $this->_getParam('private_key'));
+        $collection = $this->_createCollection($libraryId, 
+                                               $libraryType, 
+                                               $this->_getParam('private_key'));
+        
+        // Save a row in Zotero import.
+        require_once 'ZoteroImportImport.php';
+        $zoteroImport = new ZoteroImportImport;
+        $zoteroImport->collection_id = $collection->id;
+        $zoteroImport->save();
         
         // Dispatch the background process.
         $args = array('libraryId'      => $libraryId, 
                       'libraryType'    => $libraryType, 
                       'collectionName' => $collection->name, 
                       'collectionId'   => $collection->id, 
+                      'zoteroImportId' => $zoteroImport->id, 
                       'privateKey'     => $this->_getParam('private_key'));
-        ProcessDispatcher::startProcess(self::PROCESS_CLASS, null, $args);
+        $process = ProcessDispatcher::startProcess(self::PROCESS_CLASS, null, $args);
+        
+        // Add the process ID to the Zotero import row.
+        $zoteroImport->process_id = $process->id;
+        $zoteroImport->save();
         
         $this->flashSuccess('Importing the library. This may take a while.');
         $this->redirect->goto('index');
@@ -86,7 +97,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         return $match[0];
     }
     
-    protected function _getCollection($libraryId, $libraryType, $privateKey)
+    protected function _createCollection($libraryId, $libraryType, $privateKey)
     {
         require_once 'ZoteroApiClient/Service/Zotero.php';
         $z = new ZoteroApiClient_Service_Zotero($privateKey);

@@ -141,6 +141,28 @@ class ZoteroImportPlugin
     
     public static function install()
     {
+        // Create the plugin's tables.
+        $db = get_db();
+        $sql = "
+CREATE TABLE {$db->prefix}.`zotero_import_imports` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `process_id` int(10) unsigned DEFAULT NULL,
+  `collection_id` int(10) unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
+        $db->query($sql);
+
+        $sql = "
+CREATE TABLE {$db->prefix}.`zotero_import_items` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `import_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned NOT NULL,
+  `zotero_item_id` int(10) unsigned NOT NULL,
+  `zotero_updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
+        $db->query($sql);
+        
         // Insert the Zotero element set.
         $elementSetMetadata = 'Zotero';
         $elements = array();
