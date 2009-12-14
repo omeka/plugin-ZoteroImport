@@ -5,26 +5,12 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
 {
     const URI = 'https://api.zotero.org';
     
-    protected $_username;
-    protected $_password;
     protected $_privateKey;
     
-    public function __construct($username = null, $password = null, $privateKey = null)
+    public function __construct($privateKey = null)
     {
-        $this->_username   = $username;
-        $this->_password   = $password;
         $this->_privateKey = $privateKey;
         $this->setUri(self::URI);
-    }
-    
-    public function setUsername($username)
-    {
-        $this->_username = $username;
-    }
-    
-    public function setPassword($password)
-    {
-        $this->_password = $password;
     }
     
     public function setPrivateKey($privateKey)
@@ -62,12 +48,11 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
         return $this->_getFeed($path, $params);
     }
     
-    public function userItemFile($userId, $itemId)
+    public function userItemFile($userId, $itemId, array $params = array())
     {
         $path = "/users/$userId/items/$itemId/file";
-        $this->_setAuth();
         $this->_setConfig(array('maxredirects' => 0));
-        return $this->restGet($path)->getHeader('Location');
+        return $this->restGet($path, $this->_filterParams($params))->getHeader('Location');
     }
     
     public function group($groupId, array $params = array())
@@ -95,12 +80,11 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
         return $feed->current();
     }
     
-    public function groupItemFile($groupId, $itemId)
+    public function groupItemFile($groupId, $itemId, array $params = array())
     {
         $path = "/groups/$groupId/items/$itemId/file";
-        $this->_setAuth();
         $this->_setConfig(array('maxredirects' => 0));
-        return $this->restGet($path)->getHeader('Location');
+        return $this->restGet($path, $this->_filterParams($params))->getHeader('Location');
     }
     
     public function groupItemChildren($groupId, $itemId, array $params = array())
@@ -115,11 +99,6 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
         return $this->_getFeed($path, $params);
     }
     
-    protected function _setAuth()
-    {
-        self::getHttpClient()->setAuth($this->_username, $this->_password);
-    }
-    
     protected function _setConfig(array $config)
     {
         self::getHttpClient()->setConfig($config);
@@ -127,12 +106,16 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
     
     protected function _getFeed($path, $params)
     {
+        require_once 'Zend/Feed/Atom.php';
+        return new Zend_Feed_Atom($this->_getUri($path, $this->_filterParams($params)));
+    }
+    
+    protected function _filterParams(array $params = array())
+    {
         if (!isset($params['key']) && $this->_privateKey) {
             $params['key'] = $this->_privateKey;
         }
-        
-        require_once 'Zend/Feed/Atom.php';
-        return new Zend_Feed_Atom($this->_getUri($path, $params));
+        return $params;
     }
     
     protected function _getUri($path, $params)

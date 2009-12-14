@@ -15,14 +15,12 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
     {
         ini_set('memory_limit', '500M');
         
-        $this->_libraryId   = $args['libraryId'];
-        $this->_libraryType = $args['libraryType'];
+        $this->_libraryId    = $args['libraryId'];
+        $this->_libraryType  = $args['libraryType'];
         $this->_collectionId = $args['collectionId'];
         
         require_once 'ZoteroApiClient/Service/Zotero.php';
-        $this->_client = new ZoteroApiClient_Service_Zotero($args['username'], 
-                                                            $args['password'], 
-                                                            $args['privateKey']);
+        $this->_client = new ZoteroApiClient_Service_Zotero($args['privateKey']);
         
         $this->_import();
     }

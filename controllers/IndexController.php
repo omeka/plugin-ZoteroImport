@@ -40,8 +40,6 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
                       'libraryType'    => $libraryType, 
                       'collectionName' => $collection->name, 
                       'collectionId'   => $collection->id, 
-                      'username'       => $this->_getParam('username'), 
-                      'password'       => $this->_getParam('password'), 
                       'privateKey'     => $this->_getParam('private_key'));
         ProcessDispatcher::startProcess(self::PROCESS_CLASS, null, $args);
         
@@ -91,7 +89,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
     protected function _getCollection($libraryId, $libraryType, $privateKey)
     {
         require_once 'ZoteroApiClient/Service/Zotero.php';
-        $z = new ZoteroApiClient_Service_Zotero(null, null, $privateKey);
+        $z = new ZoteroApiClient_Service_Zotero($privateKey);
         $method = "{$libraryType}Items";
         $feed = $z->$method($libraryId);
         $collectionMetadata = array('public' => true, 
@@ -103,7 +101,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
     {
         try {
             require_once 'ZoteroApiClient/Service/Zotero.php';
-            $z = new ZoteroApiClient_Service_Zotero(null, null, $privateKey);
+            $z = new ZoteroApiClient_Service_Zotero($privateKey);
             $method = "{$libraryType}Items";
             $feed = $z->$method($libraryId);
             if (0 == $feed->count()) {
@@ -129,7 +127,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
             'label'       => 'Zotero Atom Feed URL', 
             'description' => 'Enter the Atom feed URL of the Zotero user or group library you want to import. This URL can be found on the library page of the Zotero website, under "Subscribe to this feed."', 
             'class'       => 'textinput', 
-            'size'        => '60', 
+            'size'        => '40', 
             'required'    => true, 
             'validators'  => array(array('zoteroapiurl', false, array(array('groupItems', 'userItems')))),
             'decorators'  => array(
@@ -144,36 +142,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         
         $form->addElement('password', 'private_key', array(
             'label'       => 'Private Key', 
-            'description' => 'Enter your Zotero private key for this library. This is not required, but is necessary to access protected user libraries (including your own). Warning: private keys for protected group libraries are currently not supported. You will not be able to import protected group libraries.', 
-            'class'       => 'textinput', 
-            'size'        => '30', 
-            'decorators'  => array(
-                'ViewHelper', 
-                array('Description', array('tag' => 'p', 'class' => 'explanation')), 
-                'Errors', 
-                array(array('InputsTag' => 'HtmlTag'), array('tag' => 'div', 'class' => 'inputs')), 
-                'Label', 
-                array(array('FieldTag' => 'HtmlTag'), array('tag' => 'div', 'class' => 'field'))
-            )
-        ));
-        
-        $form->addElement('text', 'username', array(
-            'label'       => 'Username', 
-            'class'       => 'textinput', 
-            'size'        => '30', 
-            'decorators'  => array(
-                'ViewHelper', 
-                array('Description', array('tag' => 'p', 'class' => 'explanation')), 
-                'Errors', 
-                array(array('InputsTag' => 'HtmlTag'), array('tag' => 'div', 'class' => 'inputs')), 
-                'Label', 
-                array(array('FieldTag' => 'HtmlTag'), array('tag' => 'div', 'class' => 'field'))
-            )
-        ));
-        
-        $form->addElement('password', 'password', array(
-            'label'       => 'Password', 
-            'description' => 'Enter your Zotero username and password. This is not required, but is necessary to download attachments (files and web snapshots). Warning: this will only work for your user library and group libraries you have joined.', 
+            'description' => 'If this is a user library, enter your Zotero private key. This is not required, but is necessary to access private user libraries and to download user library attachments (files and web snapshots). Warning: private keys for group libraries are currently not supported. You will not be able to import  private group libraries or download group library attachments (published or private).', 
             'class'       => 'textinput', 
             'size'        => '30', 
             'decorators'  => array(
