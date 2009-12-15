@@ -118,7 +118,7 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
                 $zoteroItem->import_id      = $this->_zoteroImportId;
                 $zoteroItem->item_id        = $omekaItem->id;
                 $zoteroItem->zotero_item_id = $item->itemID();
-                $zoteroItem->updated        = strtotime($item->updated());
+                $zoteroItem->zotero_updated = $item->updated();
                 $zoteroItem->save();
                 
                 release_object($item);
