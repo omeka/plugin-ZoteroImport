@@ -3,9 +3,12 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
 {
     protected $_libraryId;
     protected $_libraryType;
+    protected $_privateKey;
     protected $_collectionId;
     protected $_zoteroImportId;
     
+    protected $_collection;
+    protected $_zoteroImport;
     protected $_client;
     
     protected $_itemMetadata;
@@ -18,11 +21,12 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
         
         $this->_libraryId      = $args['libraryId'];
         $this->_libraryType    = $args['libraryType'];
+        $this->_privateKey     = $args['privateKey'];
         $this->_collectionId   = $args['collectionId'];
         $this->_zoteroImportId = $args['zoteroImportId'];
         
         require_once 'ZoteroApiClient/Service/Zotero.php';
-        $this->_client = new ZoteroApiClient_Service_Zotero($args['privateKey']);
+        $this->_client = new ZoteroApiClient_Service_Zotero($this->_privateKey);
         
         $this->_import();
     }

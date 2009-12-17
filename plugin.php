@@ -6,6 +6,8 @@ add_filter('admin_navigation_main', 'ZoteroImportPlugin::adminNavigationMain');
 
 class ZoteroImportPlugin
 {
+    const ZOTERO_ELEMENT_SET_NAME = 'Zotero';
+    
     public static $zoteroFields = array(
         'creator' => array('dc' => 'Creator',     'z' => array(
             'Author', 
@@ -144,7 +146,7 @@ class ZoteroImportPlugin
         // Create the plugin's tables.
         $db = get_db();
         $sql = "
-CREATE TABLE {$db->prefix}.`zotero_import_imports` (
+CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_imports` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `process_id` int(10) unsigned DEFAULT NULL,
   `collection_id` int(10) unsigned DEFAULT NULL,
@@ -153,7 +155,7 @@ CREATE TABLE {$db->prefix}.`zotero_import_imports` (
         $db->query($sql);
 
         $sql = "
-CREATE TABLE {$db->prefix}.`zotero_import_items` (
+CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_items` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `import_id` int(10) unsigned NOT NULL,
   `item_id` int(10) unsigned NOT NULL,
@@ -164,7 +166,7 @@ CREATE TABLE {$db->prefix}.`zotero_import_items` (
         $db->query($sql);
         
         // Insert the Zotero element set.
-        $elementSetMetadata = 'Zotero';
+        $elementSetMetadata = self::ZOTERO_ELEMENT_SET_NAME;
         $elements = array();
         foreach (self::$zoteroFields as $zoteroFieldName => $map) {
             if ('creator' == $zoteroFieldName) {
@@ -179,7 +181,14 @@ CREATE TABLE {$db->prefix}.`zotero_import_items` (
     }
     
     public static function uninstall()
-    {}
+    {
+        $db = get_db();
+        
+        $sql = "DROP TABLE IF EXISTS `{$db->prefix}zotero_import_imports`";
+        $db->query($sql);
+        $sql = "DROP TABLE IF EXISTS `{$db->prefix}zotero_import_items`";
+        $db->query($sql);
+    }
     
     public static function adminNavigationMain($nav)
     {
