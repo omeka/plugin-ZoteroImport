@@ -163,12 +163,6 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
    
    protected function _mapAttachment(Zend_Feed_Element $element)
    {
-        $urlXpath = '//default:tr[@class="url"]/default:td';
-        $url = $this->_contentXpath($element->content, $urlXpath, true);
-        if ($url) {
-            $this->_elementTexts['Dublin Core']['Identifier'][] = array('text' => (string) $url, 'html' => false);
-            $this->_elementTexts['Zotero']['URL'][] = array('text' => (string) $url, 'html' => false);
-        }
         $method = "{$this->_libraryType}ItemFile";
         $location = $this->_client->$method($this->_libraryId, $element->itemID());
         if ($location) {
