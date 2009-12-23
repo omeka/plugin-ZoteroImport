@@ -12,6 +12,7 @@ head($head);
 <?php else: ?>
 <table>
     <thead>
+        <th>ID</th>
         <th>Collection Name</th>
         <th>Status</th>
         <th>Started</th>
@@ -22,6 +23,7 @@ head($head);
     <?php $imports = array_reverse($this->imports); ?>
     <?php foreach ($imports as $import): ?>
     <tr>
+        <td><?php echo $import->id; ?></td>
         <td><a href="<?php echo $this->url(array('module'     => 'default', 
                                                  'controller' => 'items', 
                                                  'action'     => 'browse', 
