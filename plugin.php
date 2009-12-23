@@ -158,8 +158,10 @@ CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_imports` (
 CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_items` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `import_id` int(10) unsigned NOT NULL,
-  `item_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned DEFAULT NULL,
   `zotero_item_id` int(10) unsigned NOT NULL,
+  `zotero_item_parent_id` int(10) unsigned DEFAULT NULL,
+  `zotero_item_type` varchar(30) COLLATE utf8_unicode_ci NOT NULL,
   `zotero_updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";

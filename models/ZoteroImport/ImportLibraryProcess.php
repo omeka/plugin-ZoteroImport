@@ -1,4 +1,7 @@
 <?php
+require_once 'ZoteroApiClient/Service/Zotero.php';
+require_once 'ZoteroImportItem.php';
+
 class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
 {
     protected $_libraryId;
@@ -25,7 +28,6 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
         $this->_collectionId   = $args['collectionId'];
         $this->_zoteroImportId = $args['zoteroImportId'];
         
-        require_once 'ZoteroApiClient/Service/Zotero.php';
         $this->_client = new ZoteroApiClient_Service_Zotero($this->_privateKey);
         
         $this->_import();
@@ -96,18 +98,29 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
                     $method = "{$this->_libraryType}ItemChildren";
                     $children = $this->_client->$method($this->_libraryId, $item->itemID());
                     foreach ($children->entry as $child) {
-                        switch ($child->itemType()) {
-                            case 'note':
-                                $noteXpath = '//default:tr[@class="note"]/default:td/default:p';
-                                $note = $this->_contentXpath($child->content, $noteXpath, true);
-                                $this->_elementTexts['Zotero']['Note'][] = array('text' => (string) $note, 'html' => false);
-                                break;
-                            case 'attachment':
-                                $this->_mapAttachment($child);
-                                break;
-                            default:
-                                break;
+                        
+                        // Map a Zotero child note to an Omeka item.
+                        if ('note' == $child->itemType()) {
+                            $noteXpath = '//default:tr[@class="note"]/default:td/default:p';
+                            $note = $this->_contentXpath($child->content, $noteXpath, true);
+                            $this->_elementTexts['Zotero']['Note'][] = array('text' => (string) $note, 'html' => false);
+                        
+                        // Map a Zotero child attachment (file) to a file 
+                        // assigned to the Omeka parent item.
+                        } else if ('attachment' == $child->itemType()) {
+                            $this->_mapAttachment($child);
+                        
+                        // Unknown child. Do not map.
+                        } else {
+                            continue;
                         }
+                        
+                        // Save the Zotero child item.
+                        $this->_insertZoteroImportItem(null, 
+                                                       $child->itemID(), 
+                                                       $item->itemID(), 
+                                                       $child->itemType(), 
+                                                       $child->updated());
                     }
                 }
                 
@@ -117,17 +130,14 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
                                          $this->_fileMetadata);
                 
                 // Save the Zotero item.
-                require_once 'ZoteroImportItem.php';
-                $zoteroItem = new ZoteroImportItem;
-                $zoteroItem->import_id      = $this->_zoteroImportId;
-                $zoteroItem->item_id        = $omekaItem->id;
-                $zoteroItem->zotero_item_id = $item->itemID();
-                $zoteroItem->zotero_updated = $item->updated();
-                $zoteroItem->save();
+                $this->_insertZoteroImportItem($omekaItem->id, 
+                                               $item->itemID(), 
+                                               null, 
+                                               $item->itemType(), 
+                                               $item->updated());
                 
                 release_object($item);
                 release_object($omekaItem);
-                release_object($zoteroItem);
             }
             
         } while ($feed->link('self') != $feed->link('last'));
@@ -135,8 +145,7 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
     
     protected function _mapFields(Zend_Feed_Element $tr)
     {
-        // Only map those field nodes that exist in the mapping 
-        // array.
+        // Only map those field nodes that exist in the mapping array.
         if ($elementName = $this->_getElementName($tr['class'])) {
             
             if ($elementName['dc']) {
@@ -168,6 +177,23 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
         if ($location) {
             $this->_fileMetadata['files'][] = array('source' => $location, 'name' => $element->title());
         }
+   }
+   
+   protected function _insertZoteroImportItem($itemId, 
+                                              $zoteroItemId, 
+                                              $zoteroItemParentId,
+                                              $zoteroItemType, 
+                                              $zoteroUpdated)
+   {
+        $zoteroItem = new ZoteroImportItem;
+        $zoteroItem->import_id             = $this->_zoteroImportId;
+        $zoteroItem->item_id               = $itemId;
+        $zoteroItem->zotero_item_id        = $zoteroItemId;
+        $zoteroItem->zotero_item_parent_id = $zoteroItemParentId;
+        $zoteroItem->zotero_item_type      = $zoteroItemType;
+        $zoteroItem->zotero_updated        = $zoteroUpdated;
+        $zoteroItem->save();
+        release_object($zoteroItem);
    }
     
     protected function _getElementName($fieldName)
