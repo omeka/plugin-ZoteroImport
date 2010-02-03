@@ -65,6 +65,7 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
                 
                 // Map the title.
                 $this->_elementTexts['Dublin Core']['Title'][] = array('text' => $item->title(), 'html' => false);
+                $this->_elementTexts['Zotero']['Title'][]      = array('text' => $item->title(), 'html' => false);
                 
                 // Map top-level attachment item.
                 if ('attachment' == $item->itemType()) {
@@ -172,11 +173,48 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
    
    protected function _mapAttachment(Zend_Feed_Element $element)
    {
+        // If not already assigned to the parent item, map the attachment's 
+        // title to the parent item's Title element.
+        if (!$this->_inElementTexts('Dublin Core', 'Title', $element->title)) {
+            $this->_elementTexts['Dublin Core']['Title'][] = array('text' => $element->title(), 'html' => false);
+        }
+        if (!$this->_inElementTexts('Zotero', 'Title', $element->title)) {
+            $this->_elementTexts['Zotero']['Title'][] = array('text' => $element->title(), 'html' => false);
+        }
+        
+        // If not already assigned to the parent item, map the attachment's url 
+        // to the parent item's Identifier and URL elements.
+        $urlXpath = '//default:tr[@class="url"]/default:td';
+        if ($url = $this->_contentXpath($element->content, $urlXpath, true)) {
+            if (!$this->_inElementTexts('Dublin Core', 'Identifier', $url)) {
+                $this->_elementTexts['Dublin Core']['Identifier'][] = array('text' => $url, 'html' => false);
+            }
+            if (!$this->_inElementTexts('Zotero', 'URL', $url)) {
+                $this->_elementTexts['Zotero']['URL'][] = array('text' => $url, 'html' => false);
+            }
+        }
+        
+        // Ignoring the attachment's accessDate becuase adding it to the parent 
+        // item's metadata would only confuse matters.
+        
+        // Set the file if it exists.
         $method = "{$this->_libraryType}ItemFile";
         $location = $this->_client->$method($this->_libraryId, $element->itemID());
         if ($location) {
             $this->_fileMetadata['files'][] = array('source' => $location, 'name' => $element->title());
         }
+   }
+   
+   protected function _inElementTexts($elementSet, $element, $text)
+   {
+        if (isset($this->_elementTexts[$elementSet][$element])) {
+            foreach ($this->_elementTexts[$elementSet][$element] as $elementText) {
+                if ($text == $elementText['text']) {
+                    return true;
+                }
+            }
+        }
+        return false;
    }
    
    protected function _insertZoteroImportItem($itemId, 
