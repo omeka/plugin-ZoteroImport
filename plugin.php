@@ -1,6 +1,7 @@
 <?php
 add_plugin_hook('install', 'ZoteroImportPlugin::install');
 add_plugin_hook('uninstall', 'ZoteroImportPlugin::uninstall');
+add_plugin_hook('admin_append_to_plugin_uninstall_message', 'ZoteroImportPlugin::adminAppendToPluginUninstallMessage');
 
 add_filter('admin_navigation_main', 'ZoteroImportPlugin::adminNavigationMain');
 
@@ -143,8 +144,28 @@ class ZoteroImportPlugin
     
     public static function install()
     {
-        // Create the plugin's tables.
         $db = get_db();
+        
+        // Don't install if an element set by the name "Zotero" already exists.
+        if ($db->getTable('ElementSet')->findByName(self::ZOTERO_ELEMENT_SET_NAME)) {
+            throw new Exception('An element set by the name "' . self::ZOTERO_ELEMENT_SET_NAME . '" already exists. You must delete that element set to install this plugin.');
+        }
+        
+        // Insert the Zotero element set.
+        $elementSetMetadata = self::ZOTERO_ELEMENT_SET_NAME;
+        $elements = array();
+        foreach (self::$zoteroFields as $zoteroFieldName => $map) {
+            if ('creator' == $zoteroFieldName) {
+                foreach ($map['z'] as $creatorFieldName) {
+                    $elements[] = array('name' => $creatorFieldName, 'data_type' => 'Tiny Text');
+                }
+            } else {
+                $elements[] = array('name' => $map['z'], 'data_type' => 'Tiny Text');
+            }
+        }
+        insert_element_set($elementSetMetadata, $elements);
+        
+        // Create the plugin's tables.
         $sql = "
 CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_imports` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -166,30 +187,25 @@ CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_items` (
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
         $db->query($sql);
-        
-        // Insert the Zotero element set.
-        $elementSetMetadata = self::ZOTERO_ELEMENT_SET_NAME;
-        $elements = array();
-        foreach (self::$zoteroFields as $zoteroFieldName => $map) {
-            if ('creator' == $zoteroFieldName) {
-                foreach ($map['z'] as $creatorFieldName) {
-                    $elements[] = array('name' => $creatorFieldName, 'data_type' => 'Tiny Text');
-                }
-            } else {
-                $elements[] = array('name' => $map['z'], 'data_type' => 'Tiny Text');
-            }
-        }
-        insert_element_set($elementSetMetadata, $elements);
     }
     
     public static function uninstall()
     {
         $db = get_db();
         
+        // Delete the "Zotero" element set.
+        $elementSet = $db->getTable('ElementSet')->findByName(self::ZOTERO_ELEMENT_SET_NAME);
+        $elementSet->delete();
+        
         $sql = "DROP TABLE IF EXISTS `{$db->prefix}zotero_import_imports`";
         $db->query($sql);
         $sql = "DROP TABLE IF EXISTS `{$db->prefix}zotero_import_items`";
         $db->query($sql);
+    }
+    
+    public static function adminAppendToPluginUninstallMessage()
+    {
+        echo '<p><strong>Warning</strong>: This will permanently delete the "' . self::ZOTERO_ELEMENT_SET_NAME . '" element set and all text mapped to it during import. Text mapped to the Dublin Core element set will not be touched. You may deactivate this plugin if you do not want to lose data.</p>';
     }
     
     public static function adminNavigationMain($nav)
