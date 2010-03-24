@@ -1,9 +1,13 @@
 <?php
+
 add_plugin_hook('install', 'ZoteroImportPlugin::install');
 add_plugin_hook('uninstall', 'ZoteroImportPlugin::uninstall');
 add_plugin_hook('admin_append_to_plugin_uninstall_message', 'ZoteroImportPlugin::adminAppendToPluginUninstallMessage');
 
 add_filter('admin_navigation_main', 'ZoteroImportPlugin::adminNavigationMain');
+
+// Helper functions for exhibits
+require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'ZoteroImportFunctions.php';
 
 class ZoteroImportPlugin
 {
