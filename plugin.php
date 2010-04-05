@@ -7,6 +7,7 @@ add_plugin_hook('admin_append_to_plugin_uninstall_message', 'ZoteroImportPlugin:
 add_filter('admin_navigation_main', 'ZoteroImportPlugin::adminNavigationMain');
 
 add_plugin_hook('admin_append_to_advanced_search', 'ZoteroImportPlugin::advancedSearch');
+add_plugin_hook('item_browse_sql', 'ZoteroImportPlugin::itemBrowseSql');
 
 // Helper functions for exhibits
 require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'ZoteroImportFunctions.php';
@@ -220,16 +221,51 @@ CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_items` (
         return $nav;
     }
     
+    public static function getZoteroItemTypes()
+    {
+        $db = get_db();
+        
+        $sql = "SELECT DISTINCT (et.text) FROM `{$db->prefix}element_texts` et 
+                JOIN `{$db->prefix}elements` e ON et.element_id = e.id 
+                JOIN `{$db->prefix}element_sets` es ON e.element_set_id = es.id
+                WHERE e.name = 'Item Type'
+                AND es.name = 'Zotero'";
+        
+        $results = $db->fetchAll($sql);        
+        $zoteroItemTypes = array();
+        foreach($results as $result) {
+            $zoteroItemTypes[$result['text']] = $result['text'];
+        }
+        
+        return $zoteroItemTypes;
+    }
+    
     public static function advancedSearch()
     {
         // The array of Zotero Item Types
-        $itemTypes = array('1' => 'Foo', '2' => 'Bar');
+        $zoteroItemTypes = self::getZoteroItemTypes();
         
         $html .= '<div class="field">';
         $html .= label('zotero_item_type','Zotero Item Type');
-        $html .= select(array('name' => 'zotero_item_type', 'id' => 'zotero_item_type'), $itemTypes);
+        $html .= '<div class="inputs">';
+        $html .= select(array('name' => 'zotero_item_type', 'id' => 'zotero_item_type'), $zoteroItemTypes);
+        $html .= '</div>';
         $html .= '</div>';
         
         echo $html;
+    }
+    
+    public static function itemBrowseSql($select, $params)
+    {
+        if (array_key_exists('zotero_item_type', $_GET)) {
+            $zoteroItemType = (int)$_GET['zotero_item_type'];
+        } else if (array_key_exists('zotero_item_type', $params)) {
+            $zoteroItemType = (int)$params['zotero_item_type'];
+        } else {
+            return;
+        }
+        
+        // need to create a query using the $zoteroItemType value
+        
     }
 }
