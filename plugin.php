@@ -6,6 +6,8 @@ add_plugin_hook('admin_append_to_plugin_uninstall_message', 'ZoteroImportPlugin:
 
 add_filter('admin_navigation_main', 'ZoteroImportPlugin::adminNavigationMain');
 
+add_plugin_hook('admin_append_to_advanced_search', 'ZoteroImportPlugin::advancedSearch');
+
 // Helper functions for exhibits
 require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'ZoteroImportFunctions.php';
 
@@ -216,5 +218,18 @@ CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_items` (
     {
         $nav['Zotero Import'] = uri('zotero-import');
         return $nav;
+    }
+    
+    public static function advancedSearch()
+    {
+        // The array of Zotero Item Types
+        $itemTypes = array('1' => 'Foo', '2' => 'Bar');
+        
+        $html .= '<div class="field">';
+        $html .= label('zotero_item_type','Zotero Item Type');
+        $html .= select(array('name' => 'zotero_item_type', 'id' => 'zotero_item_type'), $itemTypes);
+        $html .= '</div>';
+        
+        echo $html;
     }
 }
