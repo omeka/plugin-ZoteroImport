@@ -262,9 +262,10 @@ AND es.name = '" . self::ZOTERO_ELEMENT_SET_NAME . "'";
     public static function itemBrowseSql($select, $params)
     {
         if (strlen($_GET['zotero_item_type'])) {
-            $select->join(array('et' => 'element_texts'), 'et.record_id = i.id', array())
-                   ->join(array('e' => 'elements'), 'et.element_id = e.id', array())
-                   ->join(array('es' => 'element_sets'), 'e.element_set_id = es.id', array())
+            $db = get_db();
+            $select->join(array('et' => $db->prefix.'element_texts'), 'et.record_id = i.id', array())
+                   ->join(array('e' => $db->prefix.'elements'), 'et.element_id = e.id', array())
+                   ->join(array('es' => $db->prefix.'element_sets'), 'e.element_set_id = es.id', array())
                    ->where('es.name = ?', self::ZOTERO_ELEMENT_SET_NAME) 
                    ->where('e.name = ?', self::$zoteroFields['itemType']['z'])
                    ->where('et.text = ?', $_GET['zotero_item_type']);
