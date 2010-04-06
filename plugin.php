@@ -225,13 +225,17 @@ CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_items` (
     {
         $db = get_db();
         
-        $sql = "SELECT DISTINCT (et.text) FROM `{$db->prefix}element_texts` et 
-                JOIN `{$db->prefix}elements` e ON et.element_id = e.id 
-                JOIN `{$db->prefix}element_sets` es ON e.element_set_id = es.id
-                WHERE e.name = 'Item Type'
-                AND es.name = 'Zotero'";
+        $sql = "
+SELECT DISTINCT(et.text), e.id 
+FROM `{$db->prefix}element_texts` et 
+JOIN `{$db->prefix}elements` e 
+ON et.element_id = e.id 
+JOIN `{$db->prefix}element_sets` es 
+ON e.element_set_id = es.id
+WHERE e.name = '" . self::$zoteroFields['itemType']['z'] . "'
+AND es.name = '" . self::ZOTERO_ELEMENT_SET_NAME . "'";
         
-        $results = $db->fetchAll($sql);        
+        $results = $db->fetchAll($sql);
         $zoteroItemTypes = array();
         foreach($results as $result) {
             $zoteroItemTypes[$result['text']] = $result['text'];
@@ -257,15 +261,15 @@ CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_items` (
     
     public static function itemBrowseSql($select, $params)
     {
-        if (array_key_exists('zotero_item_type', $_GET)) {
-            $zoteroItemType = (int)$_GET['zotero_item_type'];
-        } else if (array_key_exists('zotero_item_type', $params)) {
-            $zoteroItemType = (int)$params['zotero_item_type'];
-        } else {
-            return;
+        if (strlen($_GET['zotero_item_type'])) {
+            $select->join(array('et' => 'element_texts'), 'et.record_id = i.id', array())
+                   ->join(array('e' => 'elements'), 'et.element_id = e.id', array())
+                   ->join(array('es' => 'element_sets'), 'e.element_set_id = es.id', array())
+                   ->where('es.name = ?', self::ZOTERO_ELEMENT_SET_NAME) 
+                   ->where('e.name = ?', self::$zoteroFields['itemType']['z'])
+                   ->where('et.text = ?', $_GET['zotero_item_type']);
         }
         
-        // need to create a query using the $zoteroItemType value
-        
+        return $select;
     }
 }
