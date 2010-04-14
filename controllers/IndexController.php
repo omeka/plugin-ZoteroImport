@@ -23,12 +23,14 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
             return $this->render('index');
         }
         
-        $libraryId   = $this->_getLibraryId();
-        $libraryType = $this->_getLibraryType();
+        $libraryId           = $this->_getLibraryId();
+        $libraryType         = $this->_getLibraryType();
+        $libraryCollectionId = $this->_getLibraryCollectionId();
         
         // Verify that there are no errors when requesting this group.
         if (!$this->_verifyLibrary($libraryId, 
                                    $libraryType, 
+                                   $libraryCollectionId, 
                                    $this->_getParam('private_key'))) {
             $this->_assignFeedForm($form);
             $this->_assignImports();
@@ -38,6 +40,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         // Create the collection.
         $collection = $this->_createCollection($libraryId, 
                                                $libraryType, 
+                                               $libraryCollectionId, 
                                                $this->_getParam('private_key'));
         
         // Save a row in Zotero import.
@@ -47,11 +50,12 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         $zoteroImport->save();
         
         // Dispatch the background process.
-        $args = array('libraryId'      => $libraryId, 
-                      'libraryType'    => $libraryType, 
-                      'privateKey'     => $this->_getParam('private_key'), 
-                      'collectionId'   => $collection->id, 
-                      'zoteroImportId' => $zoteroImport->id);
+        $args = array('libraryId'           => $libraryId, 
+                      'libraryType'         => $libraryType, 
+                      'libraryCollectionId' => $libraryCollectionId, 
+                      'privateKey'          => $this->_getParam('private_key'), 
+                      'collectionId'        => $collection->id, 
+                      'zoteroImportId'      => $zoteroImport->id);
         $process = ProcessDispatcher::startProcess(self::PROCESS_CLASS, null, $args);
         
         // Set the zotero import process id.
@@ -76,14 +80,21 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         }
     }
     
-    protected function _createCollection($libraryId, $libraryType, $privateKey)
+    protected function _createCollection($libraryId, $libraryType, $collectionId, $privateKey)
     {
         require_once 'ZoteroApiClient/Service/Zotero.php';
         $z = new ZoteroApiClient_Service_Zotero($privateKey);
-        $method = "{$libraryType}Items";
-        $feed = $z->$method($libraryId);
+        if ($collectionId) {
+            $method = "{$libraryType}CollectionItems";
+            $feed = $z->$method($libraryId, $collectionId);
+            $name = trim(preg_replace('#.+/.+/.+‘(.+)’$#', '$1', $feed->title()));
+        } else {
+            $method = "{$libraryType}Items";
+            $feed = $z->$method($libraryId);
+            $name = trim(preg_replace('#.+/(.+)/.+#', '$1', $feed->title()));
+        }
         $collectionMetadata = array('public' => true, 
-                                    'name'   => trim(preg_replace('#.+/(.+)/.+#', '$1', $feed->title())));
+                                    'name'   => $name);
         return insert_collection($collectionMetadata);
     }
     
@@ -133,13 +144,26 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         return $match[0];
     }
     
-    protected function _verifyLibrary($libraryId, $libraryType, $privateKey)
+    protected function _getLibraryCollectionId()
+    {
+        if (!preg_match('#/collections/(\d+)/#', $this->_getParam('feedUrl'), $match)) {
+            return null;
+        }
+        return $match[1];
+    }
+    
+    protected function _verifyLibrary($libraryId, $libraryType, $collectionId, $privateKey)
     {
         try {
             require_once 'ZoteroApiClient/Service/Zotero.php';
             $z = new ZoteroApiClient_Service_Zotero($privateKey);
-            $method = "{$libraryType}Items";
-            $feed = $z->$method($libraryId);
+            if ($collectionId) {
+                $method = "{$libraryType}CollectionItems";
+                $feed = $z->$method($libraryId, $collectionId);
+            } else {
+                $method = "{$libraryType}Items";
+                $feed = $z->$method($libraryId);
+            }
             if (0 == $feed->count()) {
                 throw new Exception('No items found for this library');
             }
@@ -165,7 +189,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
             'class'       => 'textinput', 
             'size'        => '40', 
             'required'    => true, 
-            'validators'  => array(array('zoteroapiurl', false, array(array('groupItems', 'userItems')))),
+            'validators'  => array(array('zoteroapiurl', false, array(array('groupItems', 'userItems', 'groupCollectionItems', 'userCollectionItems')))),
             'decorators'  => array(
                 'ViewHelper', 
                 array('Description', array('tag' => 'p', 'class' => 'explanation')), 

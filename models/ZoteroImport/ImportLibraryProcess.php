@@ -6,6 +6,7 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
 {
     protected $_libraryId;
     protected $_libraryType;
+    protected $_libraryCollectionId;
     protected $_privateKey;
     protected $_collectionId;
     protected $_zoteroImportId;
@@ -22,11 +23,12 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
     {
         ini_set('memory_limit', '500M');
         
-        $this->_libraryId      = $args['libraryId'];
-        $this->_libraryType    = $args['libraryType'];
-        $this->_privateKey     = $args['privateKey'];
-        $this->_collectionId   = $args['collectionId'];
-        $this->_zoteroImportId = $args['zoteroImportId'];
+        $this->_libraryId           = $args['libraryId'];
+        $this->_libraryType         = $args['libraryType'];
+        $this->_libraryCollectionId = $args['libraryCollectionId'];
+        $this->_privateKey          = $args['privateKey'];
+        $this->_collectionId        = $args['collectionId'];
+        $this->_zoteroImportId      = $args['zoteroImportId'];
         
         $this->_client = new ZoteroApiClient_Service_Zotero($this->_privateKey);
         
@@ -43,8 +45,13 @@ class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
             }
             
             // Get the library feed.
-            $method = "{$this->_libraryType}ItemsTop";
-            $feed = $this->_client->$method($this->_libraryId, array('start' => $start));
+            if ($this->_libraryCollectionId) {
+                $method = "{$this->_libraryType}CollectionItems";
+                $feed = $this->_client->$method($this->_libraryId, $this->_libraryCollectionId, array('start' => $start));
+            } else {
+                $method = "{$this->_libraryType}Items";
+                $feed = $this->_client->$method($this->_libraryId, array('start' => $start));
+            }
             
             // Set the start parameter for the next page iteration.
             if ($feed->link('next')) {
