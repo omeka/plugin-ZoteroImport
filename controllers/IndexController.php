@@ -169,7 +169,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
             }
             return true;
         } catch (Exception $e) {
-            $this->flashError($e->getMessage().'. This may indicate that the library does not exist, you do not have access to the library, or the private key is invalid.');
+            $this->flashError($e->getMessage().'. This may indicate that the library or collection does not exist, you do not have access to the library, or the private key is invalid.');
             return false;
         }
     }
@@ -185,7 +185,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         
         $form->addElement('text', 'feedUrl', array(
             'label'       => 'Zotero Atom Feed URL', 
-            'description' => 'Enter the Atom feed URL of the Zotero user or group library you want to import. This URL can be found on the library page of the Zotero website, under "Subscribe to this feed."', 
+            'description' => 'Enter the Atom feed URL of the Zotero user or group library or collection you want to import. This URL can be found on the library or collection page of the Zotero website, under "Subscribe to this feed."', 
             'class'       => 'textinput', 
             'size'        => '40', 
             'required'    => true, 
@@ -202,7 +202,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         
         $form->addElement('password', 'private_key', array(
             'label'       => 'Private Key', 
-            'description' => 'If this is a user library, enter your Zotero private key. This is not required, but is necessary to access private user libraries and to download user library attachments (files and web snapshots). Warning: private keys for group libraries are currently not supported. You will not be able to import  private group libraries or download group library attachments (published or private).', 
+            'description' => 'If this is a user library or collection, enter your Zotero private key. This is not required, but is necessary to access private user libraries and to download user attachments (files and web snapshots). Warning: private keys for group libraries and collections are currently not supported. You will not be able to import private group libraries and collections or download group attachments (published or private).', 
             'class'       => 'textinput', 
             'size'        => '30', 
             'decorators'  => array(
