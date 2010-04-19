@@ -38,6 +38,13 @@ head($head);
                                          'Stop Import', 
                                          array('class' => 'submit')); ?>
         </form>
+        <?php else: ?>
+        <form action="<?php echo $this->url(array('action' => 'delete-import')); ?>" method="post">
+            <?php echo $this->formHidden('processId', $import->process_id); ?>
+            <?php echo $this->formSubmit('submit-delete-process', 
+                                         'Delete Import', 
+                                         array('class' => 'submit')); ?>
+        </form>
         <?php endif; ?></td>
     </tr>
     <?php endforeach; ?>

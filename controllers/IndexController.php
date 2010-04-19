@@ -1,7 +1,8 @@
 <?php
 class ZoteroImport_IndexController extends Omeka_Controller_Action
 {    
-    const PROCESS_CLASS = 'ZoteroImport_ImportLibraryProcess';
+    const PROCESS_CLASS_IMPORT = 'ZoteroImport_ImportProcess';
+    const PROCESS_CLASS_DELETE_IMPORT = 'ZoteroImport_DeleteImportProcess';
     
     protected $_feedForm;
     protected $_imports;
@@ -56,7 +57,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
                       'privateKey'          => $this->_getParam('private_key'), 
                       'collectionId'        => $collection->id, 
                       'zoteroImportId'      => $zoteroImport->id);
-        $process = ProcessDispatcher::startProcess(self::PROCESS_CLASS, null, $args);
+        $process = ProcessDispatcher::startProcess(self::PROCESS_CLASS_IMPORT, null, $args);
         
         // Set the zotero import process id.
         $zoteroImport->process_id = $process->id;
@@ -78,6 +79,16 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
             $this->_assignImports();
             return $this->render('index');
         }
+    }
+    
+    public function deleteImportAction()
+    {
+        $process = $this->getTable('Process')->find($this->_getParam('processId'));
+        $process = ProcessDispatcher::startProcess(self::PROCESS_CLASS_DELETE_IMPORT, 
+                                                   null, 
+                                                   array('processId' => $process->id));
+        $this->flashSuccess('Deleting the import. This may take a while');
+        $this->redirect->goto('index');
     }
     
     protected function _createCollection($libraryId, $libraryType, $collectionId, $privateKey)

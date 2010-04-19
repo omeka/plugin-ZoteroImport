@@ -2,7 +2,7 @@
 require_once 'ZoteroApiClient/Service/Zotero.php';
 require_once 'ZoteroImportItem.php';
 
-class ZoteroImport_ImportLibraryProcess extends ProcessAbstract
+class ZoteroImport_ImportProcess extends ProcessAbstract
 {
     protected $_libraryId;
     protected $_libraryType;
