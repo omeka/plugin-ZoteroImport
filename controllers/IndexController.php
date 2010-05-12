@@ -96,11 +96,11 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         require_once 'ZoteroApiClient/Service/Zotero.php';
         $z = new ZoteroApiClient_Service_Zotero($privateKey);
         if ($collectionId) {
-            $method = "{$libraryType}CollectionItems";
+            $method = "{$libraryType}CollectionItemsTop";
             $feed = $z->$method($libraryId, $collectionId);
             $name = trim(preg_replace('#.+/.+/.+‘(.+)’$#', '$1', $feed->title()));
         } else {
-            $method = "{$libraryType}Items";
+            $method = "{$libraryType}ItemsTop";
             $feed = $z->$method($libraryId);
             $name = trim(preg_replace('#.+/(.+)/.+#', '$1', $feed->title()));
         }

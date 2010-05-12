@@ -46,10 +46,10 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
             
             // Get the library feed.
             if ($this->_libraryCollectionId) {
-                $method = "{$this->_libraryType}CollectionItems";
+                $method = "{$this->_libraryType}CollectionItemsTop";
                 $feed = $this->_client->$method($this->_libraryId, $this->_libraryCollectionId, array('start' => $start));
             } else {
-                $method = "{$this->_libraryType}Items";
+                $method = "{$this->_libraryType}ItemsTop";
                 $feed = $this->_client->$method($this->_libraryId, array('start' => $start));
             }
             

@@ -30,6 +30,12 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
         return $this->_getFeed($path, $params);
     }
     
+    public function userCollectionItemsTop($userId, $collectionId, array $params = array())
+    {
+        $path = "/users/$userId/collections/$collectionId/items/top";
+        return $this->_getFeed($path, $params);
+    }
+    
     public function userItemsTop($userId, array $params = array())
     {
         $path = "/users/$userId/items/top";
@@ -76,6 +82,12 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
     public function groupCollectionItems($groupId, $collectionId, array $params = array())
     {
         $path = "/groups/$userId/collections/$collectionId/items";
+        return $this->_getFeed($path, $params);
+    }
+    
+    public function groupCollectionItemsTop($groupId, $collectionId, array $params = array())
+    {
+        $path = "/groups/$userId/collections/$collectionId/items/top";
         return $this->_getFeed($path, $params);
     }
     
