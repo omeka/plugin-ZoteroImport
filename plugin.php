@@ -9,9 +9,6 @@ add_filter('admin_navigation_main', 'ZoteroImportPlugin::adminNavigationMain');
 add_plugin_hook('admin_append_to_advanced_search', 'ZoteroImportPlugin::advancedSearch');
 add_plugin_hook('item_browse_sql', 'ZoteroImportPlugin::itemBrowseSql');
 
-// Helper functions for exhibits
-require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'ZoteroImportFunctions.php';
-
 class ZoteroImportPlugin
 {
     const ZOTERO_ELEMENT_SET_NAME = 'Zotero';
@@ -235,7 +232,7 @@ JOIN `{$db->prefix}elements` e
 ON et.element_id = e.id 
 JOIN `{$db->prefix}element_sets` es 
 ON e.element_set_id = es.id
-WHERE e.name = '" . self::$zoteroFields['itemType']['z'] . "'
+WHERE e.name = '" . self::$zoteroFields['itemType'] . "'
 AND es.name = '" . self::ZOTERO_ELEMENT_SET_NAME . "'";
         
         $results = $db->fetchAll($sql);
@@ -270,10 +267,82 @@ AND es.name = '" . self::ZOTERO_ELEMENT_SET_NAME . "'";
                    ->join(array('e' => $db->prefix.'elements'), 'et.element_id = e.id', array())
                    ->join(array('es' => $db->prefix.'element_sets'), 'e.element_set_id = es.id', array())
                    ->where('es.name = ?', self::ZOTERO_ELEMENT_SET_NAME) 
-                   ->where('e.name = ?', self::$zoteroFields['itemType']['z'])
+                   ->where('e.name = ?', self::$zoteroFields['itemType'])
                    ->where('et.text = ?', $_GET['zotero_item_type']);
         }
         
         return $select;
     }
+}
+
+/**
+ * Returns items of a particular Zotero item type. Uses the Item Type element in 
+ * the Zotero element set.
+ *
+ * @param string $typeName
+ * @param int $collectionId 
+ * @return void
+ */
+function zotero_import_get_items_by_zotero_item_type($typeName, $collectionId = null, $limit = 10)
+{
+    $db = get_db();
+    
+    // Get the Zotero:Item Type element
+    $element = $db->getTable('Element')->findByElementSetNameAndElementName('Zotero', 'Item Type');
+    
+    // Using the advanced search interface, get a limited set of items that have 
+    // the provided Zotero:Item Type.
+    $items = get_items(array('collection' => $collectionId, 
+                             'recent' => true, 
+                             'advanced_search' => array(array('type' => 'contains', 
+                                                              'element_id' => $element->id, 
+                                                              'terms' => $typeName))), 
+                       $limit);
+    
+    return $items;
+}
+
+/**
+ * Returns custom text built from elements from the Zotero element set.
+ * 
+ * @param array $parts The parts of the output text, mapped from Zotero elements.
+ * array(
+ *     'element'   => {Zotero element name, text, required}, 
+ *     'prefix'    => {part prefix, text, optional}, 
+ *     'suffix'    => {part suffix, text, optional}, 
+ *     'all'       => {get all element texts?, boolean, optional}, 
+ *     'delimiter' => {element text delimiter, text, optional}
+ * )
+ * @return string The output text.
+ */
+function zotero_import_build_zotero_output(array $parts = array())
+{
+    $output = '';
+    foreach ($parts as $part) {
+        
+        if (!isset($part['element']) || !is_string($part['element'])) {
+            throw new Exception('Zotero output parts must include an element name.');
+        }
+        
+        // Set the options.
+        $options = array();
+        if (isset($part['all']) && $part['all']) {
+            $options['all'] = true;
+        }
+        if (isset($part['delimiter'])) {
+            $options['delimiter'] = $part['delimiter'];
+        }
+        
+        // Set the element text.
+        $elementText = item(ZoteroImportPlugin::ZOTERO_ELEMENT_SET_NAME, $part['element'], $options);
+        if (!$elementText) {
+            continue;
+        }
+        
+        // Build the output.
+        $output .= isset($part['prefix']) ? $part['prefix'] : '';
+        $output .= is_array($elementText) ? implode(', ', $elementText) : $elementText;
+        $output .= isset($part['suffix']) ? $part['suffix'] : '';
+    }
+    return $output;
 }
