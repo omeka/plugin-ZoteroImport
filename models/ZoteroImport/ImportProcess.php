@@ -71,12 +71,11 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
                                              'file_ingest_options' => array('ignore_invalid_files' => true));
                 
                 // Map the title.
-                $this->_elementTexts['Dublin Core']['Title'][] = array('text' => $item->title(), 'html' => false);
-                $this->_elementTexts['Zotero']['Title'][]      = array('text' => $item->title(), 'html' => false);
+                $this->_elementTexts['Zotero']['Title'][] = array('text' => $item->title(), 'html' => false);
                 
                 // Map top-level attachment item.
                 if ('attachment' == $item->itemType()) {
-                    $this->_mapAttachment($item);
+                    $this->_mapAttachment($item, true);
                 }
                 
                 // Map the Zotero API field nodes to Omeka elements.
@@ -154,51 +153,35 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
     protected function _mapFields(Zend_Feed_Element $tr)
     {
         // Only map those field nodes that exist in the mapping array.
-        if ($elementName = $this->_getElementName($tr['class'])) {
+        if (array_key_exists($tr['class'], ZoteroImportPlugin::$zoteroFields)) {
             
-            if ($elementName['dc']) {
-                // Map the field nodes to the correlating Dublin Core element 
-                // set field elements.
-                $this->_elementTexts['Dublin Core'][$elementName['dc']][] = array('text' => $tr->td(), 'html' => false);
-            }
+            $elementName = ZoteroImportPlugin::$zoteroFields[$tr['class']];
             
-            if ($elementName['z']) {
-                // The creator node is formatted differently than other field 
-                // nodes. Account for this by mapping a creator node to the 
-                // correlating Zotero element set creator element.
-                if ('creator' == $tr['class'] && in_array($tr->th(), $elementName['z'])) {
-                    $this->_elementTexts['Zotero'][$tr->th()][] = array('text' => $tr->td(), 'html' => false);
+            // The creator node is formatted differently than other field 
+            // nodes. Account for this by mapping a creator node to the 
+            // correlating Zotero element set creator element.
+            if ('creator' == $tr['class'] && in_array($tr->th(), ZoteroImportPlugin::$zoteroFields['creator'])) {
+                $this->_elementTexts['Zotero'][$tr->th()][] = array('text' => $tr->td(), 'html' => false);
                 
-                // Map the field nodes to the correlating Zotero element set 
-                // field elements.
-                } else {
-                    $this->_elementTexts['Zotero'][$elementName['z']][] = array('text' => $tr->td(), 'html' => false);
-                }
+            // Map the field nodes to the correlating Zotero element set 
+            // field elements.
+            } else {
+                $this->_elementTexts['Zotero'][$elementName][] = array('text' => $tr->td(), 'html' => false);
             }
         }
    }
    
-   protected function _mapAttachment(Zend_Feed_Element $element)
+   protected function _mapAttachment(Zend_Feed_Element $element, $topLevelAttachment = false)
    {
-        // If not already assigned to the parent item, map the attachment's 
-        // title to the parent item's Title element.
-        if (!$this->_inElementTexts('Dublin Core', 'Title', $element->title)) {
-            $this->_elementTexts['Dublin Core']['Title'][] = array('text' => $element->title(), 'html' => false);
-        }
-        if (!$this->_inElementTexts('Zotero', 'Title', $element->title)) {
-            $this->_elementTexts['Zotero']['Title'][] = array('text' => $element->title(), 'html' => false);
-        }
+        $titleElement = $topLevelAttachment ? 'Title' : 'Attachment Title';
+        $this->_elementTexts['Zotero'][$titleElement][] = array('text' => $element->title(), 'html' => false);
         
         // If not already assigned to the parent item, map the attachment's url 
         // to the parent item's Identifier and URL elements.
         $urlXpath = '//default:tr[@class="url"]/default:td';
         if ($url = $this->_contentXpath($element->content, $urlXpath, true)) {
-            if (!$this->_inElementTexts('Dublin Core', 'Identifier', $url)) {
-                $this->_elementTexts['Dublin Core']['Identifier'][] = array('text' => $url, 'html' => false);
-            }
-            if (!$this->_inElementTexts('Zotero', 'URL', $url)) {
-                $this->_elementTexts['Zotero']['URL'][] = array('text' => $url, 'html' => false);
-            }
+            $urlElement = $topLevelAttachment ? 'URL' : 'Attachment URL';
+            $this->_elementTexts['Zotero'][$urlElement][] = array('text' => $url, 'html' => false);
         }
         
         // Ignoring the attachment's accessDate becuase adding it to the parent 
@@ -210,18 +193,6 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
         if ($location) {
             $this->_fileMetadata['files'][] = array('source' => $location, 'name' => $element->title());
         }
-   }
-   
-   protected function _inElementTexts($elementSet, $element, $text)
-   {
-        if (isset($this->_elementTexts[$elementSet][$element])) {
-            foreach ($this->_elementTexts[$elementSet][$element] as $elementText) {
-                if ($text == $elementText['text']) {
-                    return true;
-                }
-            }
-        }
-        return false;
    }
    
    protected function _insertZoteroImportItem($itemId, 
@@ -240,16 +211,6 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
         $zoteroItem->save();
         release_object($zoteroItem);
    }
-    
-    protected function _getElementName($fieldName)
-    {
-        foreach (ZoteroImportPlugin::$zoteroFields as $zoteroFieldName => $map) {
-            if ($fieldName == $zoteroFieldName) {
-                return $map;
-            }
-        }
-        return false;
-    }
     
     protected function _contentXpath(Zend_Feed_Element $content, $xpath, $fetchOne = false)
     {
