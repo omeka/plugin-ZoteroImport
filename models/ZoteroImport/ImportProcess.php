@@ -187,11 +187,14 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
         // Ignoring the attachment's accessDate becuase adding it to the parent 
         // item's metadata would only confuse matters.
         
-        // Set the file if it exists.
-        $method = "{$this->_libraryType}ItemFile";
-        $location = $this->_client->$method($this->_libraryId, $element->itemID());
-        if ($location) {
-            $this->_fileMetadata['files'][] = array('source' => $location, 'name' => $element->title());
+        // Set the file if it exists. The Zotero API will not return a file 
+        // unless a private key exists, so prevent unnecessary requests.
+        if ($this->_privateKey) {
+            $method = "{$this->_libraryType}ItemFile";
+            $location = $this->_client->$method($this->_libraryId, $element->itemID());
+            if ($location) {
+                $this->_fileMetadata['files'][] = array('source' => $location, 'name' => $element->title());
+            }
         }
    }
    
