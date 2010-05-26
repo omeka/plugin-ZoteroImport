@@ -71,6 +71,7 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
                                              'file_ingest_options' => array('ignore_invalid_files' => true));
                 
                 // Map the title.
+                $this->_elementTexts['Dublin Core']['Title'][] = array('text' => $item->title(), 'html' => false);
                 $this->_elementTexts['Zotero']['Title'][] = array('text' => $item->title(), 'html' => false);
                 
                 // Map top-level attachment item.
@@ -161,11 +162,38 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
             // nodes. Account for this by mapping a creator node to the 
             // correlating Zotero element set creator element.
             if ('creator' == $tr['class'] && in_array($tr->th(), ZoteroImportPlugin::$zoteroFields['creator'])) {
+                if ('Contributor' == $tr->th()) {
+                    $this->_elementTexts['Dublin Core']['Contributor'][] = array('text' => $tr->td(), 'html' => false);
+                } else {
+                    $this->_elementTexts['Dublin Core']['Creator'][] = array('text' => $tr->td(), 'html' => false);
+                }
                 $this->_elementTexts['Zotero'][$tr->th()][] = array('text' => $tr->td(), 'html' => false);
                 
             // Map the field nodes to the correlating Zotero element set 
             // field elements.
             } else {
+                switch ($elementName) {
+                    case 'Subject':
+                        $this->_elementTexts['Dublin Core']['Subject'][] = array('text' => $tr->td(), 'html' => false);
+                        break;
+                    case 'Publisher':
+                        $this->_elementTexts['Dublin Core']['Publisher'][] = array('text' => $tr->td(), 'html' => false);
+                        break;
+                    case 'Date':
+                        $this->_elementTexts['Dublin Core']['Date'][] = array('text' => $tr->td(), 'html' => false);
+                        break;
+                    case 'Rights':
+                        $this->_elementTexts['Dublin Core']['Rights'][] = array('text' => $tr->td(), 'html' => false);
+                        break;
+                    case 'Language':
+                        $this->_elementTexts['Dublin Core']['Language'][] = array('text' => $tr->td(), 'html' => false);
+                        break;
+                    case 'Type':
+                        $this->_elementTexts['Dublin Core']['Type'][] = array('text' => $tr->td(), 'html' => false);
+                        break;
+                    default:
+                        break;
+                }
                 $this->_elementTexts['Zotero'][$elementName][] = array('text' => $tr->td(), 'html' => false);
             }
         }
