@@ -200,9 +200,11 @@ CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_items` (
     {
         $db = get_db();
         
-        // Delete the "Zotero" element set.
+        // Delete the "Zotero" element set if it exists.
         $elementSet = $db->getTable('ElementSet')->findByName(self::ZOTERO_ELEMENT_SET_NAME);
-        $elementSet->delete();
+        if ($elementSet) {
+            $elementSet->delete();
+        }
         
         $sql = "DROP TABLE IF EXISTS `{$db->prefix}zotero_import_imports`";
         $db->query($sql);
