@@ -154,48 +154,108 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
     protected function _mapFields(Zend_Feed_Element $tr)
     {
         // Only map those field nodes that exist in the mapping array.
-        if (array_key_exists($tr['class'], ZoteroImportPlugin::$zoteroFields)) {
-            
-            $elementName = ZoteroImportPlugin::$zoteroFields[$tr['class']];
-            
-            // The creator node is formatted differently than other field 
-            // nodes. Account for this by mapping a creator node to the 
-            // correlating Zotero element set creator element.
-            if ('creator' == $tr['class'] && in_array($tr->th(), ZoteroImportPlugin::$zoteroFields['creator'])) {
-                if ('Contributor' == $tr->th()) {
-                    $this->_elementTexts['Dublin Core']['Contributor'][] = array('text' => $tr->td(), 'html' => false);
-                } else {
-                    $this->_elementTexts['Dublin Core']['Creator'][] = array('text' => $tr->td(), 'html' => false);
+        if (!array_key_exists($tr['class'], ZoteroImportPlugin::$zoteroFields)) {
+            return;
+        }
+        
+        $fieldName = $tr['class'];
+        $fieldNameLocale = $tr->th();
+        $fieldMap = ZoteroImportPlugin::$zoteroFields[$fieldName];
+        $elementText = $tr->td();
+        
+        // Get the element name.
+        if ('creator' == $fieldName) {
+            foreach ($fieldMap as $zoteroCreatorName => $creatorMap) {
+                if (is_array($creatorMap) && $fieldNameLocale == $creatorMap[1]) {
+                    $elementName = $creatorMap[0];
+                    break;
+                } else if ($fieldNameLocale == $creatorMap) {
+                    $elementName = $creatorMap;
+                    break;
                 }
-                $this->_elementTexts['Zotero'][$tr->th()][] = array('text' => $tr->td(), 'html' => false);
-                
-            // Map the field nodes to the correlating Zotero element set 
-            // field elements.
-            } else {
-                switch ($elementName) {
-                    case 'Subject':
-                        $this->_elementTexts['Dublin Core']['Subject'][] = array('text' => $tr->td(), 'html' => false);
-                        break;
-                    case 'Publisher':
-                        $this->_elementTexts['Dublin Core']['Publisher'][] = array('text' => $tr->td(), 'html' => false);
-                        break;
-                    case 'Date':
-                        $this->_elementTexts['Dublin Core']['Date'][] = array('text' => $tr->td(), 'html' => false);
-                        break;
-                    case 'Rights':
-                        $this->_elementTexts['Dublin Core']['Rights'][] = array('text' => $tr->td(), 'html' => false);
-                        break;
-                    case 'Language':
-                        $this->_elementTexts['Dublin Core']['Language'][] = array('text' => $tr->td(), 'html' => false);
-                        break;
-                    case 'Type':
-                        $this->_elementTexts['Dublin Core']['Type'][] = array('text' => $tr->td(), 'html' => false);
-                        break;
-                    default:
-                        break;
-                }
-                $this->_elementTexts['Zotero'][$elementName][] = array('text' => $tr->td(), 'html' => false);
             }
+            // Only map those creators that exist in the mapping array.
+            if (!isset($elementName)) {
+                return;
+            }
+        } else {
+            if (is_array($fieldMap) && $fieldNameLocale == $fieldMap[1]) {
+                $elementName = $fieldMap[0];
+            } else {
+                $elementName = $fieldMap;
+            }
+        }
+        
+        // Map to the Zotero element set.
+        $this->_elementTexts['Zotero'][$elementName][] = array('text' => $elementText, 'html' => false);
+        
+        // Map unambiguous fields to the Dublin Core element set.
+        switch ($elementName) {
+            case 'Subject':
+                $this->_elementTexts['Dublin Core']['Subject'][] = array('text' => $elementText, 'html' => false);
+                break;
+            case 'Publisher':
+                $this->_elementTexts['Dublin Core']['Publisher'][] = array('text' => $elementText, 'html' => false);
+                break;
+            case 'Date':
+                $this->_elementTexts['Dublin Core']['Date'][] = array('text' => $elementText, 'html' => false);
+                break;
+            case 'Rights':
+                $this->_elementTexts['Dublin Core']['Rights'][] = array('text' => $elementText, 'html' => false);
+                break;
+            case 'Language':
+                $this->_elementTexts['Dublin Core']['Language'][] = array('text' => $elementText, 'html' => false);
+                break;
+            case 'Contributor':
+                $this->_elementTexts['Dublin Core']['Contributor'][] = array('text' => $elementText, 'html' => false);
+                break;
+            // Map all the Creator types to DC:Creator (except for Contributor).
+            case 'Creator':
+            case 'Attorney Agent':
+            case 'Author':
+            case 'Book Author':
+            case 'Cartographer':
+            case 'Cast Member':
+            case 'Commenter':
+            case 'Composer':
+            case 'Contributor':
+            case 'Cosponsor':
+            case 'Counsel':
+            case 'Director':
+            case 'Editor':
+            case 'Guest':
+            case 'Interviewee':
+            case 'Interviewer':
+            case 'Inventor':
+            case 'Performer':
+            case 'Podcaster':
+            case 'Presenter':
+            case 'Producer':
+            case 'Programmer':
+            case 'Recipient':
+            case 'Reviewed Author':
+            case 'Scriptwriter':
+            case 'Series Editor':
+            case 'Sponsor':
+            case 'Translator':
+            case 'Words By':
+                $this->_elementTexts['Dublin Core']['Creator'][] = array('text' => $elementText, 'html' => false);
+                break;
+            // Map all the Item types to DC:Type.
+            case 'Item Type':
+            case 'Audio File Type':
+            case 'Letter Type':
+            case 'Manuscript Type':
+            case 'Map Type':
+            case 'Post Type':
+            case 'Presentation Type':
+            case 'Report Type':
+            case 'Thesis Type':
+            case 'Website Type':
+                $this->_elementTexts['Dublin Core']['Type'][] = array('text' => $elementText, 'html' => false);
+                break;
+            default:
+                break;
         }
    }
    
@@ -210,6 +270,11 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
         if ($url = $this->_contentXpath($element->content, $urlXpath, true)) {
             $urlElement = $topLevelAttachment ? 'URL' : 'Attachment URL';
             $this->_elementTexts['Zotero'][$urlElement][] = array('text' => $url, 'html' => false);
+        // If a attachment that is not top-level has no URL, still assign it a 
+        // placeholder to maintain relationships between the "Attachment Title" 
+        // and "Attachment Url" elements.
+        } else if (!$topLevelAttachment) {
+            $this->_elementTexts['Zotero']['Attachment URL'][] = array('text' => '[No URL]', 'html' => false);
         }
         
         // Ignoring the attachment's accessDate becuase adding it to the parent 
