@@ -81,13 +81,13 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
     
     public function groupCollectionItems($groupId, $collectionId, array $params = array())
     {
-        $path = "/groups/$userId/collections/$collectionId/items";
+        $path = "/groups/$groupId/collections/$collectionId/items";
         return $this->_getFeed($path, $params);
     }
     
     public function groupCollectionItemsTop($groupId, $collectionId, array $params = array())
     {
-        $path = "/groups/$userId/collections/$collectionId/items/top";
+        $path = "/groups/$groupId/collections/$collectionId/items/top";
         return $this->_getFeed($path, $params);
     }
     
