@@ -144,11 +144,42 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
                                                $item->itemType(), 
                                                $item->updated());
                 
+                // Zotero stores web snapshots in ZIP files containing base64 
+                // encoded filenames. Decode these filenames if able.
+                if (class_exists('ZipArchive')) {
+                    $this->_base64DecodeZip($omekaItem);
+                }
+                
                 release_object($item);
                 release_object($omekaItem);
             }
             
         } while ($feed->link('self') != $feed->link('last'));
+    }
+    
+    /**
+     * Base64 decode the filenames if files are valid ZIP archives.
+     * 
+     * @param Item $item
+     */
+    protected function _base64DecodeZip($item)
+    {
+        // Iterate all the item's files.
+        foreach ($item->Files as $file) {
+            $za = new ZipArchive;
+            // Skip this file if it is not a valid ZIP archive. open() will 
+            // return true if valid, error codes otherwise.
+            if (true !== $za->open($file->getPath('archive'))) {
+                continue;
+            }
+            // Rename each file in the archive.
+            for ($i = 0; $i < $za->numFiles; $i++) {
+                $stat = $za->statIndex($i);
+                $name = base64_decode(strstr($stat['name'], '%', true));
+                $za->renameIndex($i, $name);
+            }
+            $za->close();
+        }
     }
     
     protected function _mapFields(Zend_Feed_Element $tr)
