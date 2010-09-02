@@ -1,4 +1,16 @@
 <?php
+/**
+ * @version $Id$
+ * @copyright Center for History and New Media, 2007-2010
+ * @license http://www.gnu.org/licenses/gpl-3.0.txt
+ * @package ZoteroImport
+ */
+
+/**
+ * The Zotero Import plugin controller for index pages.
+ * 
+ * @package ZoteroImport
+ */
 class ZoteroImport_IndexController extends Omeka_Controller_Action
 {    
     const PROCESS_CLASS_IMPORT = 'ZoteroImport_ImportProcess';
@@ -7,12 +19,18 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
     protected $_feedForm;
     protected $_imports;
     
+    /**
+     * Process the index action.
+     */
     public function indexAction()
     {
         $this->_assignFeedForm();
         $this->_assignImports();
     }
     
+    /**
+     * Process the import-library action.
+     */
     public function importLibraryAction()
     {
         $form = $this->_getFeedForm();
@@ -67,6 +85,9 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         $this->redirect->goto('index');
     }
     
+    /**
+     * Process the stop-import action.
+     */
     public function stopImportAction()
     {
         $process = $this->getTable('Process')->find($this->_getParam('processId'));
@@ -81,6 +102,9 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         }
     }
     
+    /**
+     * Process the delete-import action.
+     */
     public function deleteImportAction()
     {
         $process = $this->getTable('Process')->find($this->_getParam('processId'));
@@ -91,9 +115,21 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         $this->redirect->goto('index');
     }
     
+    /**
+     * Creates an Omeka collection that corresponds to the imported Zotero 
+     * library/collection.
+     * 
+     * @uses insert_collection()
+     * @param int The library ID.
+     * @param string The type of library, user or group.
+     * @param int|null The collection ID.
+     * @param string The Zotero API private key.
+     * @return Collection Omeka collection object.
+     */
     protected function _createCollection($libraryId, $libraryType, $collectionId, $privateKey)
     {
         require_once 'ZoteroApiClient/Service/Zotero.php';
+        // Get the collection title from the Zotero API.
         $z = new ZoteroApiClient_Service_Zotero($privateKey);
         if ($collectionId) {
             $method = "{$libraryType}CollectionItemsTop";
@@ -109,6 +145,11 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         return insert_collection($collectionMetadata);
     }
     
+    /**
+     * Assigns the feed form to the view.
+     * 
+     * @param Zend_Form|null
+     */
     protected function _assignFeedForm($feedForm = null)
     {
         if ($feedForm) {
@@ -121,6 +162,11 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         $this->view->assign('form', $this->_feedForm);
     }
     
+    /**
+     * Assigns the existing Zotero Import imports records to the view.
+     * 
+     * @param array|null
+     */
     protected function _assignImports($imports = null)
     {
         if ($imports) {
@@ -133,6 +179,11 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         $this->view->assign('imports', $this->_imports);
     }
     
+    /**
+     * Extracts the library type from the feed URL.
+     * 
+     * @return string The library type, group or user.
+     */
     protected function _getLibraryType()
     {
         preg_match('/groups|users/', $this->_getParam('feedUrl'), $match);
@@ -149,12 +200,22 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         return $libraryType;
     }
     
+    /**
+     * Extracts the library ID from the feed URL.
+     * 
+     * @return int The library ID.
+     */
     protected function _getLibraryId()
     {
         preg_match('/\d+/', $this->_getParam('feedUrl'), $match);
         return $match[0];
     }
     
+    /**
+     * Extracts the collection ID from the feed URL.
+     * 
+     * @return int The collection ID.
+     */
     protected function _getLibraryCollectionId()
     {
         if (!preg_match('#/collections/(\d+)/#', $this->_getParam('feedUrl'), $match)) {
@@ -163,6 +224,11 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         return $match[1];
     }
     
+    /**
+     * Verifies that that requested library or collection is available.
+     * 
+     * @return bool
+     */
     protected function _verifyLibrary($libraryId, $libraryType, $collectionId, $privateKey)
     {
         try {
@@ -185,6 +251,11 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         }
     }
     
+    /**
+     * Builds the feed form.
+     * 
+     * @return Zend_Form
+     */
     protected function _getFeedForm()
     {
         require_once 'Zend/Form.php';

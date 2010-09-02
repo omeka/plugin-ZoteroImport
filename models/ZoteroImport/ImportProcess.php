@@ -1,7 +1,19 @@
 <?php
+/**
+ * @version $Id$
+ * @copyright Center for History and New Media, 2007-2010
+ * @license http://www.gnu.org/licenses/gpl-3.0.txt
+ * @package ZoteroImport
+ */
+
 require_once 'ZoteroApiClient/Service/Zotero.php';
 require_once 'ZoteroImportItem.php';
 
+/**
+ * The Zotero import process.
+ * 
+ * @package ZoteroImport
+ */
 class ZoteroImport_ImportProcess extends ProcessAbstract
 {
     protected $_libraryId;
@@ -19,10 +31,17 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
     protected $_elementTexts;
     protected $_fileMetadata;
     
+    /**
+     * Runs the import process.
+     * 
+     * @param array Required arguments to run the process.
+     */
     public function run($args)
     {
+        // Raise the memory limit.
         ini_set('memory_limit', '500M');
         
+        // Set the arguments.
         $this->_libraryId           = $args['libraryId'];
         $this->_libraryType         = $args['libraryType'];
         $this->_libraryCollectionId = $args['libraryCollectionId'];
@@ -30,11 +49,16 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
         $this->_collectionId        = $args['collectionId'];
         $this->_zoteroImportId      = $args['zoteroImportId'];
         
+        // Set the Zotero client.
         $this->_client = new ZoteroApiClient_Service_Zotero($this->_privateKey);
         
         $this->_import();
     }
     
+    /**
+     * Performs the import by iterating the Zotero API Atom feeds and mapping 
+     * each entry to an Omeka item.
+     */
     protected function _import()
     {
         do {
@@ -160,7 +184,7 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
     /**
      * Base64 decode the filenames if files are valid ZIP archives.
      * 
-     * @param Item $item
+     * @param Item
      */
     protected function _base64DecodeZip($item)
     {
@@ -182,6 +206,11 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
         }
     }
     
+    /**
+     * Maps Zotero fields to Omeka elements.
+     * 
+     * @param Zend_Feed_Element
+     */
     protected function _mapFields(Zend_Feed_Element $tr)
     {
         // Only map those field nodes that exist in the mapping array.
@@ -290,6 +319,12 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
         }
    }
    
+   /**
+    * Maps Zotero attachments to Omeka files, et al. 
+    * 
+    * @param Zend_Feed_Element
+    * @param bool Flag indicating that this is a top-level attachment.
+    */
    protected function _mapAttachment(Zend_Feed_Element $element, $topLevelAttachment = false)
    {
         $titleElement = $topLevelAttachment ? 'Title' : 'Attachment Title';
@@ -322,6 +357,15 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
         }
    }
    
+   /**
+    * Inserts a row into zotero_import_items.
+    * 
+    * @param int
+    * @param int
+    * @param int
+    * @param string
+    * @param string
+    */
    protected function _insertZoteroImportItem($itemId, 
                                               $zoteroItemId, 
                                               $zoteroItemParentId,
@@ -339,6 +383,14 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
         release_object($zoteroItem);
    }
     
+    /**
+     * Gets values via XPath.
+     * 
+     * @param Zend_Feed_Element The XML element object to search.
+     * @param string The XPath.
+     * @param bool Fetch all the results or just the first.
+     * @return string
+     */
     protected function _contentXpath(Zend_Feed_Element $content, $xpath, $fetchOne = false)
     {
         $xml = simplexml_load_string($content->div->saveXml());

@@ -1,9 +1,26 @@
 <?php
+/**
+ * @version $Id$
+ * @copyright Center for History and New Media, 2007-2010
+ * @license http://www.gnu.org/licenses/gpl-3.0.txt
+ * @package ZoteroImport
+ */
+
+/**
+ * The Zotero delete import process.
+ * 
+ * @package ZoteroImport
+ */
 class ZoteroImport_DeleteImportProcess extends ProcessAbstract
 {
     protected $_db;
     protected $_processId;
     
+    /**
+     * Runs the delete import process.
+     * 
+     * @param array Required arguments to run the process.
+     */
     public function run($args)
     {
         ini_set('memory_limit', '500M');
@@ -12,6 +29,9 @@ class ZoteroImport_DeleteImportProcess extends ProcessAbstract
         $this->_deleteImport();
     }
     
+    /**
+     * Deletes all the items imported from an import process.
+     */
     protected function _deleteImport()
     {
         $process = $this->_db->getTable('Process')->find($this->_processId);

@@ -1,4 +1,10 @@
 <?php
+/**
+ * @version $Id$
+ * @copyright Center for History and New Media, 2007-2010
+ * @license http://www.gnu.org/licenses/gpl-3.0.txt
+ * @package ZoteroImport
+ */
 
 add_plugin_hook('install', 'ZoteroImportPlugin::install');
 add_plugin_hook('uninstall', 'ZoteroImportPlugin::uninstall');
@@ -9,12 +15,26 @@ add_filter('admin_navigation_main', 'ZoteroImportPlugin::adminNavigationMain');
 add_plugin_hook('admin_append_to_advanced_search', 'ZoteroImportPlugin::advancedSearch');
 add_plugin_hook('item_browse_sql', 'ZoteroImportPlugin::itemBrowseSql');
 
+/**
+ * Contains code used to integrate Zotero Import into Omeka.
+ * 
+ * @package ZoteroImport
+ */
 class ZoteroImportPlugin
 {
     const ZOTERO_ELEMENT_SET_NAME = 'Zotero';
     
-    // Zotero-to-Omeka mapping table.
-    // [Zotero field name] = array([Omeka element name], [Zotero locale field name / API <th> name])
+    /**
+     * Zotero-to-Omeka mapping table.
+     * 
+     * [Zotero field name] = [Omeka element name], 
+     * [Zotero field name] = array(
+     *     [Omeka element name], 
+     *     [Zotero locale field name / API <th> name]
+     * )
+     * 
+     * @var array
+     */
     public static $zoteroFields = array(
         // Creators
         'creator'=>array(
@@ -161,7 +181,10 @@ class ZoteroImportPlugin
         'attachmentTitle'      => 'Attachment Title', 
         'attachmentUrl'        => 'Attachment URL'
     );
-
+    
+    /**
+     * Installs the Zotero Import plugin.
+     */
     public static function install()
     {
         $db = get_db();
@@ -211,6 +234,9 @@ CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_items` (
         $db->query($sql);
     }
     
+    /**
+     * Uninstalls the Zotero Import plugin.
+     */
     public static function uninstall()
     {
         $db = get_db();
@@ -221,23 +247,39 @@ CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_items` (
             $elementSet->delete();
         }
         
+        // DROP all tables created during installation.
         $sql = "DROP TABLE IF EXISTS `{$db->prefix}zotero_import_imports`";
         $db->query($sql);
         $sql = "DROP TABLE IF EXISTS `{$db->prefix}zotero_import_items`";
         $db->query($sql);
     }
     
+    /**
+     * Appends a warning message to the uninstall confirmation page.
+     */
     public static function adminAppendToPluginUninstallMessage()
     {
         echo '<p><strong>Warning</strong>: This will permanently delete the "' . self::ZOTERO_ELEMENT_SET_NAME . '" element set and all text mapped to it during import. Text mapped to the Dublin Core element set will not be touched. You may deactivate this plugin if you do not want to lose data.</p>';
     }
     
+    /**
+     * Adds a Zotero Import tab to the admin navigation.
+     * 
+     * @param array
+     * @return array
+     */
     public static function adminNavigationMain($nav)
     {
         $nav['Zotero Import'] = uri('zotero-import');
         return $nav;
     }
     
+    /**
+     * Gets all the Zotero Item Types in a format designed to be used by 
+     * Zend_View_Helper_FormSelect.
+     * 
+     * @return array
+     */
     public static function getZoteroItemTypes()
     {
         $db = get_db();
@@ -261,6 +303,10 @@ AND es.name = '" . self::ZOTERO_ELEMENT_SET_NAME . "'";
         return $zoteroItemTypes;
     }
     
+    /**
+     * Appends a narrow by Zotero Item Type select menu to the admin advanced 
+     * search.
+     */
     public static function advancedSearch()
     {
         // The array of Zotero Item Types
@@ -276,6 +322,11 @@ AND es.name = '" . self::ZOTERO_ELEMENT_SET_NAME . "'";
         echo $html;
     }
     
+    /**
+     * Narrows a search by Zotero Item Type.
+     * 
+     * @return Zend_Db_Select
+     */
     public static function itemBrowseSql($select, $params)
     {
         if (strlen($_GET['zotero_item_type'])) {
@@ -296,9 +347,10 @@ AND es.name = '" . self::ZOTERO_ELEMENT_SET_NAME . "'";
  * Returns items of a particular Zotero item type. Uses the Item Type element in 
  * the Zotero element set.
  *
- * @param string $typeName
- * @param int $collectionId 
- * @return void
+ * @param string Search items with this Zotero item type.
+ * @param int|null Search only in this collection.
+ * @param int Maximum number of items to return.
+ * @return array An array containing item results.
  */
 function zotero_import_get_items_by_zotero_item_type($typeName, $collectionId = null, $limit = 10)
 {
@@ -322,13 +374,16 @@ function zotero_import_get_items_by_zotero_item_type($typeName, $collectionId = 
 /**
  * Returns custom text built from elements from the Zotero element set.
  * 
- * @param array $parts The parts of the output text, mapped from Zotero elements.
+ * @param array $parts The parts of the output text mapped from Zotero elements.
  * array(
- *     'element'   => {Zotero element name, text, required}, 
- *     'prefix'    => {part prefix, text, optional}, 
- *     'suffix'    => {part suffix, text, optional}, 
- *     'all'       => {get all element texts?, boolean, optional}, 
- *     'delimiter' => {element text delimiter, text, optional}
+ *     array(
+ *         'element'   => {Zotero element name, text, required}, 
+ *         'prefix'    => {part prefix, text, optional}, 
+ *         'suffix'    => {part suffix, text, optional}, 
+ *         'all'       => {get all element texts?, boolean, optional}, 
+ *         'delimiter' => {element text delimiter, text, optional}
+ *     ), 
+ *     array([...])
  * )
  * @return string The output text.
  */

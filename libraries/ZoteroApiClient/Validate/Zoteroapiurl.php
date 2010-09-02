@@ -1,4 +1,16 @@
 <?php
+/**
+ * @version $Id$
+ * @copyright Center for History and New Media, 2007-2010
+ * @license http://www.gnu.org/licenses/gpl-3.0.txt
+ * @package ZoteroImport
+ */
+
+/**
+ * Contains code that validates a Zotero API URL.
+ * 
+ * @package ZoteroImport
+ */
 class ZoteroApiClient_Validate_Zoteroapiurl extends Zend_Validate_Abstract
 {
     const ZOTERO_API_URL = 'https://api.zotero.org';
