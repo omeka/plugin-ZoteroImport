@@ -43,7 +43,7 @@ head($head);
             <?php echo $this->formHidden('processId', $import->process_id); ?>
             <?php echo $this->formSubmit('submit-delete-process', 
                                          'Delete Import', 
-                                         array('class' => 'submit')); ?>
+                                         array('class' => 'submit delete')); ?>
         </form>
         <?php endif; ?></td>
     </tr>
