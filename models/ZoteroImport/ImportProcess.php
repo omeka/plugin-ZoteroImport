@@ -8,6 +8,7 @@
 
 require_once 'ZoteroApiClient/Service/Zotero.php';
 require_once 'ZoteroImportItem.php';
+require_once 'Omeka/Filter/Filename.php';
 
 /**
  * The Zotero import process.
@@ -352,7 +353,20 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
             $method = "{$this->_libraryType}ItemFile";
             $location = $this->_client->$method($this->_libraryId, $element->itemID());
             if ($location) {
-                $this->_fileMetadata['files'][] = array('source' => $location, 'name' => $element->title());
+                // Must filter the filename to prevent copy errors.
+                $filter = new Omeka_Filter_Filename;
+                $this->_fileMetadata['files'][] = array(
+                    'source' => $location, 
+                    'name' => $filter->renameFileForArchive($element->title()), 
+                    // Set the title.
+                    'metadata' => array(
+                        'Dublin Core' => array(
+                            'Title' => array(
+                                array('text' => $element->title(), 'html' => false)
+                            )
+                        )
+                    )
+                );
             }
         }
    }

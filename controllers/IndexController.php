@@ -284,7 +284,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         
         $form->addElement('password', 'private_key', array(
             'label'       => 'Private Key', 
-            'description' => 'If this is a user library or collection, enter your Zotero private key. This is not required, but is necessary to access private user libraries and to download user attachments (files and web snapshots). Warning: private keys for group libraries and collections are currently not supported. You will not be able to import private group libraries and collections or download group attachments (published or private).', 
+            'description' => 'Enter your Zotero private key. This is not required, but is necessary to access private libraries and collections and to download attachments (files and web snapshots).', 
             'class'       => 'textinput', 
             'size'        => '30', 
             'decorators'  => array(
