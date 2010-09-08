@@ -9,6 +9,7 @@
 require_once 'ZoteroApiClient/Service/Zotero.php';
 require_once 'ZoteroImportItem.php';
 require_once 'Omeka/Filter/Filename.php';
+require_once 'Zend/Uri.php';
 
 /**
  * The Zotero import process.
@@ -337,6 +338,7 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
         if ($url = $this->_contentXpath($element->content, $urlXpath, true)) {
             $urlElement = $topLevelAttachment ? 'URL' : 'Attachment URL';
             $this->_elementTexts['Zotero'][$urlElement][] = array('text' => $url, 'html' => false);
+        
         // If a attachment that is not top-level has no URL, still assign it a 
         // placeholder to maintain relationships between the "Attachment Title" 
         // and "Attachment Url" elements.
@@ -353,16 +355,19 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
             $method = "{$this->_libraryType}ItemFile";
             $location = $this->_client->$method($this->_libraryId, $element->itemID());
             if ($location) {
-                // Must filter the filename to prevent copy errors.
-                $filter = new Omeka_Filter_Filename;
+                // Set the original filename as the basename of the URL path.
+                $name = urldecode(basename(Zend_Uri::factory($location)->getPath()));
                 $this->_fileMetadata['files'][] = array(
                     'source' => $location, 
-                    'name' => $filter->renameFileForArchive($element->title()), 
+                    'name' => $name, 
                     // Set the title.
                     'metadata' => array(
                         'Dublin Core' => array(
                             'Title' => array(
                                 array('text' => $element->title(), 'html' => false)
+                            ),
+                            'Identifier' => array(
+                                array('text' => $url, 'html' => false)
                             )
                         )
                     )

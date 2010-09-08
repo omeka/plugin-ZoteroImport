@@ -292,7 +292,8 @@ ON et.element_id = e.id
 JOIN `{$db->prefix}element_sets` es 
 ON e.element_set_id = es.id
 WHERE e.name = '" . self::$zoteroFields['itemType'][0] . "'
-AND es.name = '" . self::ZOTERO_ELEMENT_SET_NAME . "'";
+AND es.name = '" . self::ZOTERO_ELEMENT_SET_NAME . "'
+ORDER BY et.text";
         
         $results = $db->fetchAll($sql);
         $zoteroItemTypes = array();
