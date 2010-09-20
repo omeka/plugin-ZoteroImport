@@ -176,7 +176,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         if (!$this->_imports) {
             $this->_imports = $this->getTable('ZoteroImportImport')->findAll();
         }
-        $this->view->assign('imports', array_reverse($this->_imports));
+        $this->view->assign('imports', $this->_imports);
     }
     
     /**
