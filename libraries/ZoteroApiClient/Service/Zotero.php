@@ -7,6 +7,8 @@
  */
 
 require_once 'Zend/Rest/Client.php';
+require_once 'Zend/Feed/Atom.php';
+require_once 'Zend/Uri.php';
 
 /**
  * Contains code used to interface with the Zotero API.
@@ -289,14 +291,30 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
     /**
      * Requests an Atom feed from the Zotero API.
      * 
+     * Makes up to two feed request attempts. This is to compensate for 
+     * transient HTTP error responses, such as 500 and 503.
+     * 
+     * @todo May have to suppress the frequency of request attempts when Zotero 
+     *       implements request throttling.
      * @param string The Zotero API path for the desired action.
      * @param array Additional parameters for the request.
      * @return Zend_Feed_Atom
      */
     protected function _getFeed($path, $params)
     {
-        require_once 'Zend/Feed/Atom.php';
-        return new Zend_Feed_Atom($this->_getUri($path, $this->_filterParams($params)));
+        $uri = $this->_getUri($path, $this->_filterParams($params));
+        $attempt = 0;
+        while (true) {
+            try {
+                $attempt++;
+                return new Zend_Feed_Atom($uri);
+            } catch (Zend_Feed_Exception $e) {
+                if (2 > $attempt) {
+                    continue;
+                }
+                throw $e;
+            }
+        }
     }
     
     /**
@@ -322,7 +340,6 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
      */
     protected function _getUri($path, $params)
     {
-        require_once 'Zend/Uri.php';
         $uri = Zend_Uri::factory(self::URI);
         $uri->setPath($path);
         $uri->setQuery($params);
