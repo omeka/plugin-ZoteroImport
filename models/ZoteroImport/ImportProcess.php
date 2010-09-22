@@ -355,8 +355,20 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
             $method = "{$this->_libraryType}ItemFile";
             $location = $this->_client->$method($this->_libraryId, $element->itemID());
             if ($location) {
+                $uri = Zend_Uri::factory($location);
+                // Hack to work around a bug in Omeka 1.2 concerning Source file 
+                // ingests and filenames containing Unicode characters. Omeka 
+                // correctly saves Unicode filenames to the archive, but removes 
+                // the Unicode characters in the database (in `files`.
+                // `archive_filename`). This is fixed in Omeka 1.3.
+                if (version_compare(OMEKA_VERSION, '1.3-dev', '<')) {
+                    $name = md5(mt_rand() + microtime(true)) 
+                          . '.' 
+                          . pathinfo($uri->getPath(), PATHINFO_EXTENSION);
                 // Set the original filename as the basename of the URL path.
-                $name = urldecode(basename(Zend_Uri::factory($location)->getPath()));
+                } else {
+                    $name = urldecode(basename($uri->getPath()));
+                }
                 $this->_fileMetadata['files'][] = array(
                     'source' => $location, 
                     'name' => $name, 
