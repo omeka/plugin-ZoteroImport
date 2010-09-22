@@ -329,21 +329,19 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
     */
    protected function _mapAttachment(Zend_Feed_Element $element, $topLevelAttachment = false)
    {
-        $titleElement = $topLevelAttachment ? 'Title' : 'Attachment Title';
-        $this->_elementTexts['Zotero'][$titleElement][] = array('text' => $element->title(), 'html' => false);
-        
-        // If not already assigned to the parent item, map the attachment's url 
-        // to the parent item's Identifier and URL elements.
-        $urlXpath = '//default:tr[@class="url"]/default:td';
-        if ($url = $this->_contentXpath($element->content, $urlXpath, true)) {
-            $urlElement = $topLevelAttachment ? 'URL' : 'Attachment URL';
-            $this->_elementTexts['Zotero'][$urlElement][] = array('text' => $url, 'html' => false);
-        
-        // If a attachment that is not top-level has no URL, still assign it a 
-        // placeholder to maintain relationships between the "Attachment Title" 
-        // and "Attachment Url" elements.
-        } else if (!$topLevelAttachment) {
-            $this->_elementTexts['Zotero']['Attachment URL'][] = array('text' => '[No URL]', 'html' => false);
+        if (!$topLevelAttachment) {
+            $this->_elementTexts['Zotero']['Attachment Title'][] = array('text' => $element->title(), 'html' => false);
+            
+            $urlXpath = '//default:tr[@class="url"]/default:td';
+            if ($url = $this->_contentXpath($element->content, $urlXpath, true)) {
+                $this->_elementTexts['Zotero']['Attachment URL'][] = array('text' => $url, 'html' => false);
+            
+            // If a attachment that is not top-level has no URL, still assign it 
+            // a placeholder to maintain relationships between the "Attachment 
+            // Title" and "Attachment Url" elements.
+            } else {
+                $this->_elementTexts['Zotero']['Attachment URL'][] = array('text' => '[No URL]', 'html' => false);
+            }
         }
         
         // Ignoring the attachment's accessDate becuase adding it to the parent 
