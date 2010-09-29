@@ -36,7 +36,7 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
     /**
      * Runs the import process.
      * 
-     * @param array Required arguments to run the process.
+     * @param array $args Required arguments to run the process.
      */
     public function run($args)
     {
@@ -186,7 +186,7 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
     /**
      * Base64 decode the filenames if files are valid ZIP archives.
      * 
-     * @param Item
+     * @param Item $item
      */
     protected function _base64DecodeZip($item)
     {
@@ -211,7 +211,7 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
     /**
      * Maps Zotero fields to Omeka elements.
      * 
-     * @param Zend_Feed_Element
+     * @param Zend_Feed_Element $tr
      */
     protected function _mapFields(Zend_Feed_Element $tr)
     {
@@ -389,11 +389,11 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
    /**
     * Inserts a row into zotero_import_items.
     * 
-    * @param int
-    * @param int
-    * @param int
-    * @param string
-    * @param string
+    * @param int $itemId
+    * @param int $zoteroItemId
+    * @param int $zoteroItemParentId
+    * @param string $zoteroItemType
+    * @param string $zoteroUpdated
     */
    protected function _insertZoteroImportItem($itemId, 
                                               $zoteroItemId, 
@@ -415,9 +415,9 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
     /**
      * Gets values via XPath.
      * 
-     * @param Zend_Feed_Element The XML element object to search.
-     * @param string The XPath.
-     * @param bool Fetch all the results or just the first.
+     * @param Zend_Feed_Element $content The XML element object to search.
+     * @param string $xpath The XPath.
+     * @param bool $fetchOne Fetch all the results or just the first.
      * @return string
      */
     protected function _contentXpath(Zend_Feed_Element $content, $xpath, $fetchOne = false)

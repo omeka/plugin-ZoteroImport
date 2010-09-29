@@ -265,7 +265,7 @@ CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_items` (
     /**
      * Adds a Zotero Import tab to the admin navigation.
      * 
-     * @param array
+     * @param array $nav
      * @return array
      */
     public static function adminNavigationMain($nav)
@@ -348,9 +348,9 @@ ORDER BY et.text";
  * Returns items of a particular Zotero item type. Uses the Item Type element in 
  * the Zotero element set.
  *
- * @param string Search items with this Zotero item type.
- * @param int|null Search only in this collection.
- * @param int Maximum number of items to return.
+ * @param string $typeName Search items with this Zotero item type.
+ * @param int|null $collectionId Search only in this collection.
+ * @param int $limit Maximum number of items to return.
  * @return array An array containing item results.
  */
 function zotero_import_get_items_by_zotero_item_type($typeName, $collectionId = null, $limit = 10)

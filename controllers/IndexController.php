@@ -120,10 +120,10 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
      * library/collection.
      * 
      * @uses insert_collection()
-     * @param int The library ID.
-     * @param string The type of library, user or group.
-     * @param int|null The collection ID.
-     * @param string The Zotero API private key.
+     * @param int $libraryId The library ID.
+     * @param string $libraryType The type of library, user or group.
+     * @param int|null $collectionId The collection ID.
+     * @param string $privateKey The Zotero API private key.
      * @return Collection Omeka collection object.
      */
     protected function _createCollection($libraryId, $libraryType, $collectionId, $privateKey)
@@ -165,7 +165,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
     /**
      * Assigns the existing Zotero Import imports records to the view.
      * 
-     * @param array|null
+     * @param array|null $imports
      */
     protected function _assignImports($imports = null)
     {
@@ -227,6 +227,10 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
     /**
      * Verifies that that requested library or collection is available.
      * 
+     * @param int $libraryId
+     * @param string $libraryType
+     * @param int $collectionId
+     * @param string $privateKey
      * @return bool
      */
     protected function _verifyLibrary($libraryId, $libraryType, $collectionId, $privateKey)

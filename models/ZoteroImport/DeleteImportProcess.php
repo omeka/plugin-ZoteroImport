@@ -19,7 +19,7 @@ class ZoteroImport_DeleteImportProcess extends ProcessAbstract
     /**
      * Runs the delete import process.
      * 
-     * @param array Required arguments to run the process.
+     * @param array $args Required arguments to run the process.
      */
     public function run($args)
     {
