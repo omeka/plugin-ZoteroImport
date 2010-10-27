@@ -130,9 +130,6 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
                 // Map Zotero children (notes & attachments).
                 if ($item->numChildren()) {
                     $method = "{$this->_libraryType}ItemChildren";
-                    if (58278468 == $item->key()) {
-                        $this->_log($item->saveXml());
-                    }
                     $children = $this->_client->$method($this->_libraryId, $item->key());
                     foreach ($children->entry as $child) {
                         
