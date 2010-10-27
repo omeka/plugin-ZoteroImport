@@ -117,7 +117,7 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
                 // Map Zotero tags to Omeka tags, comma-delimited.
                 if ($item->numTags()) {
                     $method = "{$this->_libraryType}ItemTags";
-                    $tags = $this->_client->$method($this->_libraryId, $item->itemID());
+                    $tags = $this->_client->$method($this->_libraryId, $item->key());
                     $tagArray = array();
                     foreach ($tags->entry as $tag) {
                         // Remove commas from Zotero tags, or Omeka will assume 
@@ -130,14 +130,17 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
                 // Map Zotero children (notes & attachments).
                 if ($item->numChildren()) {
                     $method = "{$this->_libraryType}ItemChildren";
-                    $children = $this->_client->$method($this->_libraryId, $item->itemID());
+                    if (58278468 == $item->key()) {
+                        $this->_log($item->saveXml());
+                    }
+                    $children = $this->_client->$method($this->_libraryId, $item->key());
                     foreach ($children->entry as $child) {
                         
                         // Map a Zotero child note to an Omeka item.
                         if ('note' == $child->itemType()) {
-                            $noteXpath = '//default:tr[@class="note"]/default:td/default:p';
+                            $noteXpath = '//default:tr[@class="note"]/default:td';
                             $note = $this->_contentXpath($child->content, $noteXpath, true);
-                            $this->_elementTexts['Zotero']['Note'][] = array('text' => (string) $note, 'html' => false);
+                            $this->_elementTexts['Zotero']['Note'][] = array('text' => (string) $note, 'html' => true);
                         
                         // Map a Zotero child attachment (file) to a file 
                         // assigned to the Omeka parent item.
@@ -151,8 +154,8 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
                         
                         // Save the Zotero child item.
                         $this->_insertZoteroImportItem(null, 
-                                                       $child->itemID(), 
-                                                       $item->itemID(), 
+                                                       $child->key(), 
+                                                       $item->key(), 
                                                        $child->itemType(), 
                                                        $child->updated());
                     }
@@ -165,7 +168,7 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
                 
                 // Save the Zotero item.
                 $this->_insertZoteroImportItem($omekaItem->id, 
-                                               $item->itemID(), 
+                                               $item->key(), 
                                                null, 
                                                $item->itemType(), 
                                                $item->updated());
@@ -351,7 +354,7 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
         // unless a private key exists, so prevent unnecessary requests.
         if ($this->_privateKey) {
             $method = "{$this->_libraryType}ItemFile";
-            $location = $this->_client->$method($this->_libraryId, $element->itemID());
+            $location = $this->_client->$method($this->_libraryId, $element->key());
             if ($location) {
                 $uri = Zend_Uri::factory($location);
                 // Hack to work around a bug in Omeka 1.2 concerning Source file 
@@ -396,18 +399,18 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
     * @param string $zoteroUpdated
     */
    protected function _insertZoteroImportItem($itemId, 
-                                              $zoteroItemId, 
-                                              $zoteroItemParentId,
+                                              $zoteroItemKey, 
+                                              $zoteroItemParentKey,
                                               $zoteroItemType, 
                                               $zoteroUpdated)
    {
         $zoteroItem = new ZoteroImportItem;
-        $zoteroItem->import_id             = $this->_zoteroImportId;
-        $zoteroItem->item_id               = $itemId;
-        $zoteroItem->zotero_item_id        = $zoteroItemId;
-        $zoteroItem->zotero_item_parent_id = $zoteroItemParentId;
-        $zoteroItem->zotero_item_type      = $zoteroItemType;
-        $zoteroItem->zotero_updated        = $zoteroUpdated;
+        $zoteroItem->import_id              = $this->_zoteroImportId;
+        $zoteroItem->item_id                = $itemId;
+        $zoteroItem->zotero_item_key        = $zoteroItemKey;
+        $zoteroItem->zotero_item_parent_key = $zoteroItemParentKey;
+        $zoteroItem->zotero_item_type       = $zoteroItemType;
+        $zoteroItem->zotero_updated         = $zoteroUpdated;
         $zoteroItem->save();
         release_object($zoteroItem);
    }

@@ -8,6 +8,7 @@
 
 add_plugin_hook('install', 'ZoteroImportPlugin::install');
 add_plugin_hook('uninstall', 'ZoteroImportPlugin::uninstall');
+add_plugin_hook('upgrade', 'ZoteroImportPlugin::upgrade');
 add_plugin_hook('admin_append_to_plugin_uninstall_message', 'ZoteroImportPlugin::adminAppendToPluginUninstallMessage');
 
 add_filter('admin_navigation_main', 'ZoteroImportPlugin::adminNavigationMain');
@@ -252,6 +253,13 @@ CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_items` (
         $db->query($sql);
         $sql = "DROP TABLE IF EXISTS `{$db->prefix}zotero_import_items`";
         $db->query($sql);
+    }
+    
+    public static function upgrade()
+    {
+        // ALTER TABLE `omeka_zotero_import_items` 
+        // CHANGE `zotero_item_id` `zotero_item_key` VARCHAR( 50 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+        // CHANGE `zotero_item_parent_id` `zotero_item_parent_key` VARCHAR( 50 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL
     }
     
     /**
