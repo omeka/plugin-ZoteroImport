@@ -255,11 +255,20 @@ CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_items` (
         $db->query($sql);
     }
     
-    public static function upgrade()
+    public static function upgrade($oldVersion, $newVersion)
     {
-        // ALTER TABLE `omeka_zotero_import_items` 
-        // CHANGE `zotero_item_id` `zotero_item_key` VARCHAR( 50 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-        // CHANGE `zotero_item_parent_id` `zotero_item_parent_key` VARCHAR( 50 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL
+        $db = get_db();
+        switch ($oldVersion) {
+            case '1.1':
+                // Zotero changed the way it identifies items from a numeric ID 
+                // to an alphanumeric key. These changes fix this.
+                $sql = "ALTER TABLE `{$db->prefix}zotero_import_items` 
+                        CHANGE `zotero_item_id` `zotero_item_key` VARCHAR( 50 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+                        CHANGE `zotero_item_parent_id` `zotero_item_parent_key` VARCHAR( 50 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL";
+                 $db->query($sql);
+            default:
+                break;
+        }
     }
     
     /**
