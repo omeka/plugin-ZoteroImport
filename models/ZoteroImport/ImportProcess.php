@@ -186,6 +186,7 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
     /**
      * Base64 decode the filenames if files are valid ZIP archives.
      * 
+     * @link https://www.zotero.org/trac/browser/extension/trunk/chrome/content/zotero/xpcom/utilities.js#L995
      * @param Item $item
      */
     protected function _base64DecodeZip($item)
@@ -201,7 +202,12 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
             // Rename each file in the archive.
             for ($i = 0; $i < $za->numFiles; $i++) {
                 $stat = $za->statIndex($i);
-                $name = base64_decode(strstr($stat['name'], '%', true));
+                // Encoded filenames end with %ZB64, remove prior to decoding.
+                $name = preg_replace('/%ZB64$/', '', $stat['name']);
+                // Base64 decode the filename.
+                $name = base64_decode($name);
+                // Some decoded filenames end with @22, remove prior to renaming.
+                $name = preg_replace('/@22$/', '', $name);
                 $za->renameIndex($i, $name);
             }
             $za->close();

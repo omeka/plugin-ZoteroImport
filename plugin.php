@@ -226,8 +226,8 @@ CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_items` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `import_id` int(10) unsigned NOT NULL,
   `item_id` int(10) unsigned DEFAULT NULL,
-  `zotero_item_id` int(10) unsigned NOT NULL,
-  `zotero_item_parent_id` int(10) unsigned DEFAULT NULL,
+  `zotero_item_key` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `zotero_item_parent_key` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
   `zotero_item_type` varchar(30) COLLATE utf8_unicode_ci NOT NULL,
   `zotero_updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
@@ -263,8 +263,8 @@ CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_items` (
                 // Zotero changed the way it identifies items from a numeric ID 
                 // to an alphanumeric key. These changes fix this.
                 $sql = "ALTER TABLE `{$db->prefix}zotero_import_items` 
-                        CHANGE `zotero_item_id` `zotero_item_key` VARCHAR( 50 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-                        CHANGE `zotero_item_parent_id` `zotero_item_parent_key` VARCHAR( 50 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL";
+                        CHANGE `zotero_item_id` `zotero_item_key` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+                        CHANGE `zotero_item_parent_id` `zotero_item_parent_key` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL";
                  $db->query($sql);
             default:
                 break;
