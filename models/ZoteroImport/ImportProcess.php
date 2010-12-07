@@ -137,6 +137,12 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
                         if ('note' == $child->itemType()) {
                             $noteXpath = '//default:tr[@class="note"]/default:td';
                             $note = $this->_contentXpath($child->content, $noteXpath, true);
+                            // Prepare the note for import.
+                            if ($note instanceof SimpleXMLElement) {
+                                $note = preg_replace('#^<td>#', '', $note->asXML());
+                                $note = preg_replace('#</td>$#', '', $note);
+                                $note = trim($note);
+                            }
                             $this->_elementTexts['Zotero']['Note'][] = array('text' => (string) $note, 'html' => true);
                         
                         // Map a Zotero child attachment (file) to a file 
