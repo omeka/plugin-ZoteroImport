@@ -139,9 +139,7 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
                             $note = $this->_contentXpath($child->content, $noteXpath, true);
                             // Prepare the note for import.
                             if ($note instanceof SimpleXMLElement) {
-                                $note = preg_replace('#^<td>#', '', $note->asXML());
-                                $note = preg_replace('#</td>$#', '', $note);
-                                $note = trim($note);
+                                $note = trim(preg_replace('#^<td>(.*)</td>$#', '$1', $note->asXML()));
                             }
                             $this->_elementTexts['Zotero']['Note'][] = array('text' => (string) $note, 'html' => true);
                         
@@ -199,9 +197,15 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
     {
         // Iterate all the item's files.
         foreach ($item->Files as $file) {
+            // Skip this file if it does not have a ".zip" file extension. This 
+            // is needed because ZipArchive::open() sometimes opens files that 
+            // are not ZIP archives.
+            if (!preg_match('/\.zip$/', $file->archive_filename)) {
+                continue;
+            }
             $za = new ZipArchive;
-            // Skip this file if it is not a valid ZIP archive. open() will 
-            // return true if valid, error codes otherwise.
+            // Skip this file if an error occurs. ZipArchive::open() will return 
+            // true if valid, error codes otherwise.
             if (true !== $za->open($file->getPath('archive'))) {
                 continue;
             }
@@ -430,7 +434,7 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
      * @param Zend_Feed_Element $content The XML element object to search.
      * @param string $xpath The XPath.
      * @param bool $fetchOne Fetch all the results or just the first.
-     * @return string
+     * @return array|SimpleXMLElement|null
      */
     protected function _contentXpath(Zend_Feed_Element $content, $xpath, $fetchOne = false)
     {
