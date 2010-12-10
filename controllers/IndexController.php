@@ -218,7 +218,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
      */
     protected function _getLibraryCollectionId()
     {
-        if (!preg_match('#/collections/(\d+)/#', $this->_getParam('feedUrl'), $match)) {
+        if (!preg_match('#/collections/(.+)/#', $this->_getParam('feedUrl'), $match)) {
             return null;
         }
         return $match[1];
