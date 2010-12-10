@@ -264,8 +264,8 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
             }
         }
         
-        // Map to the Zotero element set.
-        $this->_elementTexts['Zotero'][$elementName][] = array('text' => $elementText, 'html' => false);
+        // Map to the Zotero element set. Set HTML to true if this is a Note.
+        $this->_elementTexts['Zotero'][$elementName][] = array('text' => $elementText, 'html' => 'Note' == $elementName ? true : false);
         
         // Map unambiguous fields to the Dublin Core element set.
         switch ($elementName) {
