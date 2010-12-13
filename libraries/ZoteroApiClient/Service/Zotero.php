@@ -139,18 +139,28 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
     }
     
     /**
-     * Gets the location of a user item file.
+     * Gets the Zotero API and Amazon S3 URLs of a user item file.
+     * 
+     * Returns an array containing the Zotero API file method URL and the Amazon 
+     * S3 URL to the file, if one exists in S3. Recommended use is to download 
+     * the file using the Zotero URL and to extract the original file name from 
+     * the S3 URL, since S3 URLs expire in 30 seconds. Not all Zotero 
+     * attachments have corresponding files.
      * 
      * @param int The user ID.
      * @param int The item key.
      * @param array Additional parameters for the request.
-     * @return string
+     * @return array array('zotero' => string, 's3' => string|null)
      */
     public function userItemFile($userId, $itemKey, array $params = array())
     {
         $path = "/users/$userId/items/$itemKey/file";
+        $params = $this->_filterParams($params);
         $this->_setConfig(array('maxredirects' => 0));
-        return $this->restGet($path, $this->_filterParams($params))->getHeader('Location');
+        return array(
+            's3'     => $this->restGet($path, $params)->getHeader('Location'), 
+            'zotero' => $this->_getUri($path, $params)
+        );
     }
     
     /**

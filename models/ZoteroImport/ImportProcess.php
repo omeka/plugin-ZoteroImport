@@ -360,47 +360,55 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
             }
         }
         
-        // Ignoring the attachment's accessDate becuase adding it to the parent 
-        // item's metadata would only confuse matters.
-        
-        // Set the file if it exists. The Zotero API will not return a file 
-        // unless a private key exists, so prevent unnecessary requests.
-        if ($this->_privateKey) {
-            $method = "{$this->_libraryType}ItemFile";
-            $location = $this->_client->$method($this->_libraryId, $element->key());
-            if ($location) {
-                $uri = Zend_Uri::factory($location);
-                // Hack to work around a bug in Omeka 1.2 concerning Source file 
-                // ingests and filenames containing Unicode characters. Omeka 
-                // correctly saves Unicode filenames to the archive, but removes 
-                // the Unicode characters in the database (in `files`.
-                // `archive_filename`). This is fixed in Omeka 1.3.
-                if (version_compare(OMEKA_VERSION, '1.3-dev', '<')) {
-                    $name = md5(mt_rand() + microtime(true)) 
-                          . '.' 
-                          . pathinfo($uri->getPath(), PATHINFO_EXTENSION);
-                // Set the original filename as the basename of the URL path.
-                } else {
-                    $name = urldecode(basename($uri->getPath()));
-                }
-                $this->_fileMetadata['files'][] = array(
-                    'source' => $location, 
-                    'name' => $name, 
-                    // Set the title.
-                    'metadata' => array(
-                        'Dublin Core' => array(
-                            'Title' => array(
-                                array('text' => $element->title(), 'html' => false)
-                            ),
-                            'Identifier' => array(
-                                array('text' => $url, 'html' => false)
-                            )
-                        )
-                    )
-                );
-            }
+        // The Zotero API will not return a file unless a private key exists, so 
+        // prevent unnecessary requests.
+        if (!$this->_privateKey) {
+            return;
         }
-   }
+        
+        // Get the file URLs.
+        $method = "{$this->_libraryType}ItemFile";
+        $urls = $this->_client->$method($this->_libraryId, $element->key());
+        
+        // Not all attachments have corresponding files in Amazon S3, so return 
+        // those that do not.
+        if (!$urls['s3']) {
+            return;
+        }
+        
+        // Name the file.
+        $uri = Zend_Uri::factory($urls['s3']);
+        // Hack to work around a bug in Omeka 1.2 concerning Source file 
+        // ingests and filenames containing Unicode characters. Omeka 
+        // correctly saves Unicode filenames to the archive, but removes 
+        // the Unicode characters in the database (in `files`.
+        // `archive_filename`). This is fixed in Omeka 1.3.
+        if (version_compare(OMEKA_VERSION, '1.3-dev', '<')) {
+            $name = md5(mt_rand() + microtime(true)) 
+                  . '.' 
+                  . pathinfo($uri->getPath(), PATHINFO_EXTENSION);
+        // Set the original filename as the basename of the URL path.
+        } else {
+            $name = urldecode(basename($uri->getPath()));
+        }
+        
+        // Set the file metadata.
+        $this->_fileMetadata['files'][] = array(
+            'source' => $urls['zotero'], 
+            'name' => $name, 
+            // Set the title.
+            'metadata' => array(
+                'Dublin Core' => array(
+                    'Title' => array(
+                        array('text' => $element->title(), 'html' => false)
+                    ),
+                    'Identifier' => array(
+                        array('text' => $url, 'html' => false)
+                    )
+                )
+            )
+        );
+    }
    
    /**
     * Inserts a row into zotero_import_items.
