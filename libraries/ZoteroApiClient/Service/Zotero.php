@@ -59,13 +59,13 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
      * Gets a user collection items feed.
      * 
      * @param int The user ID.
-     * @param int The collection ID.
+     * @param int The collection key.
      * @param array Additional parameters for the request.
      * @return Zend_Feed_Atom
      */
-    public function userCollectionItems($userId, $collectionId, array $params = array())
+    public function userCollectionItems($userId, $collectionKey, array $params = array())
     {
-        $path = "/users/$userId/collections/$collectionId/items";
+        $path = "/users/$userId/collections/$collectionKey/items";
         return $this->_getFeed($path, $params);
     }
     
@@ -73,13 +73,13 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
      * Gets a user collection top items feed.
      * 
      * @param int The user ID.
-     * @param int The collection ID.
+     * @param int The collection key.
      * @param array Additional parameters for the request.
      * @return Zend_Feed_Atom
      */
-    public function userCollectionItemsTop($userId, $collectionId, array $params = array())
+    public function userCollectionItemsTop($userId, $collectionKey, array $params = array())
     {
-        $path = "/users/$userId/collections/$collectionId/items/top";
+        $path = "/users/$userId/collections/$collectionKey/items/top";
         return $this->_getFeed($path, $params);
     }
     
@@ -100,13 +100,13 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
      * Gets a user item feed.
      * 
      * @param int The user ID.
-     * @param int The item ID.
+     * @param int The item key.
      * @param array Additional parameters for the request.
      * @return Zend_Feed_Atom
      */
-    public function userItem($userId, $itemId, array $params = array())
+    public function userItem($userId, $itemKey, array $params = array())
     {
-        $path = "/users/$userId/items/$itemId";
+        $path = "/users/$userId/items/$itemKey";
         return $this->_getFeed($path, $params);
     }
     
@@ -114,13 +114,13 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
      * Gets a user item tags feed.
      * 
      * @param int The user ID.
-     * @param int The item ID.
+     * @param int The item key.
      * @param array Additional parameters for the request.
      * @return Zend_Feed_Atom
      */
-    public function userItemTags($userId, $itemId, array $params = array())
+    public function userItemTags($userId, $itemKey, array $params = array())
     {
-        $path = "/users/$userId/items/$itemId/tags";
+        $path = "/users/$userId/items/$itemKey/tags";
         return $this->_getFeed($path, $params);
     }
     
@@ -128,13 +128,13 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
      * Gets a user item children feed.
      * 
      * @param int The user ID.
-     * @param int The item ID.
+     * @param int The item key.
      * @param array Additional parameters for the request.
      * @return Zend_Feed_Atom
      */
-    public function userItemChildren($userId, $itemId, array $params = array())
+    public function userItemChildren($userId, $itemKey, array $params = array())
     {
-        $path = "/users/$userId/items/$itemId/children";
+        $path = "/users/$userId/items/$itemKey/children";
         return $this->_getFeed($path, $params);
     }
     
@@ -142,13 +142,13 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
      * Gets the location of a user item file.
      * 
      * @param int The user ID.
-     * @param int The item ID.
+     * @param int The item key.
      * @param array Additional parameters for the request.
      * @return string
      */
-    public function userItemFile($userId, $itemId, array $params = array())
+    public function userItemFile($userId, $itemKey, array $params = array())
     {
-        $path = "/users/$userId/items/$itemId/file";
+        $path = "/users/$userId/items/$itemKey/file";
         $this->_setConfig(array('maxredirects' => 0));
         return $this->restGet($path, $this->_filterParams($params))->getHeader('Location');
     }
@@ -183,13 +183,13 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
      * Gets a group collection items feed.
      * 
      * @param int The group ID.
-     * @param int The collection ID.
+     * @param int The collection key.
      * @param array Additional parameters for the request.
      * @return Zend_Feed_Atom
      */
-    public function groupCollectionItems($groupId, $collectionId, array $params = array())
+    public function groupCollectionItems($groupId, $collectionKey, array $params = array())
     {
-        $path = "/groups/$groupId/collections/$collectionId/items";
+        $path = "/groups/$groupId/collections/$collectionKey/items";
         return $this->_getFeed($path, $params);
     }
     
@@ -197,13 +197,13 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
      * Gets a group collection top items feed.
      * 
      * @param int The group ID.
-     * @param int The collection ID.
+     * @param int The collection key.
      * @param array Additional parameters for the request.
      * @return Zend_Feed_Atom
      */
-    public function groupCollectionItemsTop($groupId, $collectionId, array $params = array())
+    public function groupCollectionItemsTop($groupId, $collectionKey, array $params = array())
     {
-        $path = "/groups/$groupId/collections/$collectionId/items/top";
+        $path = "/groups/$groupId/collections/$collectionKey/items/top";
         return $this->_getFeed($path, $params);
     }
     
@@ -224,13 +224,13 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
      * Gets a group item feed.
      * 
      * @param int The group ID.
-     * @param int The item ID.
+     * @param int The item key.
      * @param array Additional parameters for the request.
      * @return Zend_Feed_Atom
      */
-    public function groupItem($groupId, $itemId, array $params = array())
+    public function groupItem($groupId, $itemKey, array $params = array())
     {
-        $path = "/groups/$groupId/items/$itemId";
+        $path = "/groups/$groupId/items/$itemKey";
         $feed = $this->_getFeed($path, $params);
         return $feed->current();
     }
@@ -239,13 +239,13 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
      * Gets the location of a group item file.
      * 
      * @param int The group ID.
-     * @param int The item ID.
+     * @param int The item key.
      * @param array Additional parameters for the request.
      * @return string
      */
-    public function groupItemFile($groupId, $itemId, array $params = array())
+    public function groupItemFile($groupId, $itemKey, array $params = array())
     {
-        $path = "/groups/$groupId/items/$itemId/file";
+        $path = "/groups/$groupId/items/$itemKey/file";
         $this->_setConfig(array('maxredirects' => 0));
         return $this->restGet($path, $this->_filterParams($params))->getHeader('Location');
     }
@@ -254,13 +254,13 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
      * Gets a group item children feed.
      * 
      * @param int The group ID.
-     * @param int The item ID.
+     * @param int The item key.
      * @param array Additional parameters for the request.
      * @return Zend_Feed_Atom
      */
-    public function groupItemChildren($groupId, $itemId, array $params = array())
+    public function groupItemChildren($groupId, $itemKey, array $params = array())
     {
-        $path = "/groups/$groupId/items/$itemId/children";
+        $path = "/groups/$groupId/items/$itemKey/children";
         return $this->_getFeed($path, $params);
     }
     
@@ -268,13 +268,13 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
      * Gets a group item tags feed.
      * 
      * @param int The group ID.
-     * @param int The item ID.
+     * @param int The item key.
      * @param array Additional parameters for the request.
      * @return Zend_Feed_Atom
      */
-    public function groupItemTags($groupId, $itemId, array $params = array())
+    public function groupItemTags($groupId, $itemKey, array $params = array())
     {
-        $path = "/groups/$groupId/items/$itemId/tags";
+        $path = "/groups/$groupId/items/$itemKey/tags";
         return $this->_getFeed($path, $params);
     }
     
