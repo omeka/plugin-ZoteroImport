@@ -246,18 +246,23 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
     }
     
     /**
-     * Gets the location of a group item file.
+     * Gets the Zotero API and Amazon S3 URLs of a group item file.
      * 
+     * @see ZoteroApiClient_Service_Zotero::userItemFile()
      * @param int The group ID.
      * @param int The item key.
      * @param array Additional parameters for the request.
-     * @return string
+     * @return array array('zotero' => string, 's3' => string|null)
      */
     public function groupItemFile($groupId, $itemKey, array $params = array())
     {
         $path = "/groups/$groupId/items/$itemKey/file";
+        $params = $this->_filterParams($params);
         $this->_setConfig(array('maxredirects' => 0));
-        return $this->restGet($path, $this->_filterParams($params))->getHeader('Location');
+        return array(
+            's3'     => $this->restGet($path, $params)->getHeader('Location'), 
+            'zotero' => $this->_getUri($path, $params)
+        );
     }
     
     /**
