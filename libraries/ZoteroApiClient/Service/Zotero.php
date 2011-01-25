@@ -317,6 +317,10 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
      */
     protected function _getFeed($path, $params)
     {
+        $client = Zend_Feed::getHttpClient();
+        $client->setHeaders('Accept-Encoding', '');
+        $client->setConfig(array('httpversion' => Zend_Http_Client::HTTP_0));
+        
         $uri = $this->_getUri($path, $this->_filterParams($params));
         $attempt = 0;
         while (true) {
