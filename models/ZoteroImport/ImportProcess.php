@@ -51,8 +51,8 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
         $this->_collectionId        = $args['collectionId'];
         $this->_zoteroImportId      = $args['zoteroImportId'];
         
-        // Set the Zotero client.
-        $this->_client = new ZoteroApiClient_Service_Zotero($this->_privateKey);
+        // Set the Zotero client. Make up to 3 request attempts.
+        $this->_client = new ZoteroApiClient_Service_Zotero($this->_privateKey, 3);
         
         $this->_import();
     }

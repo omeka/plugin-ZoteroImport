@@ -20,15 +20,28 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
     const URI = 'https://api.zotero.org';
     
     protected $_privateKey;
+    protected $_requestAttempts = 1;
     
     /**
      * Constructs the object.
      * 
-     * @param string|null The Zotero private key needed for the requests.
+     * @todo May have to suppress the frequency of request attempts when Zotero 
+     *       implements request throttling.
+     * @param string|null $privateKey The Zotero private key needed for the 
+     * requests.
+     * @param int $requestAttempts The number of HTTP request attempts to make 
+     * before throwing an Exception. This is to compensate for transient HTTP error 
+     * responses.
      */
-    public function __construct($privateKey = null)
+    public function __construct($privateKey = null, $requestAttempts = 1)
     {
         $this->_privateKey = $privateKey;
+        
+        // Set the request attempts.
+        if (0 < (int) $requestAttempts) {
+            $this->_requestAttempts = $requestAttempts;
+        }
+        
         $this->setUri(self::URI);
     }
     
@@ -157,8 +170,21 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
         $path = "/users/$userId/items/$itemKey/file";
         $params = $this->_filterParams($params);
         $this->_setConfig(array('maxredirects' => 0));
+        $attempt = 0;
+        while (true) {
+            try {
+                $attempt++;
+                $s3 = $this->restGet($path, $params)->getHeader('Location');
+                break;
+            } catch (Exception $e) {
+                if ($this->_requestAttempts > $attempt) {
+                    continue;
+                }
+                throw $e;
+            }
+        }
         return array(
-            's3'     => $this->restGet($path, $params)->getHeader('Location'), 
+            's3'     => $s3, 
             'zotero' => $this->_getUri($path, $params)
         );
     }
@@ -259,8 +285,21 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
         $path = "/groups/$groupId/items/$itemKey/file";
         $params = $this->_filterParams($params);
         $this->_setConfig(array('maxredirects' => 0));
+        $attempt = 0;
+        while (true) {
+            try {
+                $attempt++;
+                $s3 = $this->restGet($path, $params)->getHeader('Location');
+                break;
+            } catch (Exception $e) {
+                if ($this->_requestAttempts > $attempt) {
+                    continue;
+                }
+                throw $e;
+            }
+        }
         return array(
-            's3'     => $this->restGet($path, $params)->getHeader('Location'), 
+            's3'     => $s3, 
             'zotero' => $this->_getUri($path, $params)
         );
     }
@@ -306,11 +345,6 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
     /**
      * Requests an Atom feed from the Zotero API.
      * 
-     * Makes up to two feed request attempts. This is to compensate for 
-     * transient HTTP error responses, such as 500 and 503.
-     * 
-     * @todo May have to suppress the frequency of request attempts when Zotero 
-     *       implements request throttling.
      * @param string The Zotero API path for the desired action.
      * @param array Additional parameters for the request.
      * @return Zend_Feed_Atom
@@ -327,8 +361,8 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
             try {
                 $attempt++;
                 return new Zend_Feed_Atom($uri);
-            } catch (Zend_Feed_Exception $e) {
-                if (2 > $attempt) {
+            } catch (Exception $e) {
+                if ($this->_requestAttempts > $attempt) {
                     continue;
                 }
                 throw $e;
