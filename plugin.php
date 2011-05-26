@@ -15,6 +15,8 @@ add_filter('admin_navigation_main', 'ZoteroImportPlugin::adminNavigationMain');
 
 add_plugin_hook('admin_append_to_advanced_search', 'ZoteroImportPlugin::advancedSearch');
 add_plugin_hook('item_browse_sql', 'ZoteroImportPlugin::itemBrowseSql');
+add_plugin_hook('define_acl', 'ZoteroImportPlugin::defineAcl');
+
 
 /**
  * Contains code used to integrate Zotero Import into Omeka.
@@ -287,7 +289,9 @@ CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_items` (
      */
     public static function adminNavigationMain($nav)
     {
-        $nav['Zotero Import'] = uri('zotero-import');
+        if(has_permission('ZoteroImport_Index', 'index')) {
+            $nav['Zotero Import'] = uri('zotero-import');
+        }
         return $nav;
     }
     
@@ -358,6 +362,13 @@ ORDER BY et.text";
         }
         
         return $select;
+    }
+    
+    public function defineAcl($acl)
+    {
+        $acl->loadResourceList(
+            array('ZoteroImport_Index' => array('index', 'import-library', 'stop-import', 'delete-import'))
+        );
     }
 }
 
