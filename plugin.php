@@ -364,7 +364,7 @@ ORDER BY et.text";
         return $select;
     }
     
-    public function defineAcl($acl)
+    public static function defineAcl($acl)
     {
         $acl->loadResourceList(
             array('ZoteroImport_Index' => array('index', 'import-library', 'stop-import', 'delete-import'))
