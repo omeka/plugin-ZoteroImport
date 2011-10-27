@@ -17,7 +17,6 @@ add_plugin_hook('admin_append_to_advanced_search', 'ZoteroImportPlugin::advanced
 add_plugin_hook('item_browse_sql', 'ZoteroImportPlugin::itemBrowseSql');
 add_plugin_hook('define_acl', 'ZoteroImportPlugin::defineAcl');
 
-
 /**
  * Contains code used to integrate Zotero Import into Omeka.
  * 
@@ -369,6 +368,48 @@ ORDER BY et.text";
         $acl->loadResourceList(
             array('ZoteroImport_Index' => array('index', 'import-library', 'stop-import', 'delete-import'))
         );
+    }
+    
+    /**
+     * Decode ZIP filenames.
+     * 
+     * Zotero stores web snapshots in ZIP files containing base64 encoded 
+     * filenames
+     * 
+     * @param File $file
+     */
+    public static function beforeInsertFile($file)
+    {
+        // Return if the file does not have a ".zip" file extension. This is 
+        // needed because ZipArchive::open() sometimes opens files that are not 
+        // ZIP archives.
+        if (!preg_match('/\.zip$/', $file->archive_filename)) {
+            return;
+        }
+        
+        $za = new ZipArchive;
+        
+        // Skip this file if an error occurs. ZipArchive::open() will return 
+        // true if valid, error codes otherwise.
+        if (true !== $za->open($file->getPath('archive'))) {
+            continue;
+        }
+        
+        // Rename each file in the archive.
+        for ($i = 0; $i < $za->numFiles; $i++) {
+            $stat = $za->statIndex($i);
+            // Encoded filenames end with %ZB64, remove prior to decoding.
+            $name = preg_replace('/%ZB64$/', '', $stat['name']);
+            // Base64 decode the filename.
+            $name = base64_decode($name);
+            // Some decoded filenames begin with @22, remove prior to renaming.
+            $name = preg_replace('/^@22/', '', $name);
+            // Some decoded filenames end with @22, remove prior to renaming.
+            $name = preg_replace('/@22$/', '', $name);
+            $za->renameIndex($i, $name);
+        }
+        
+        $za->close();
     }
 }
 

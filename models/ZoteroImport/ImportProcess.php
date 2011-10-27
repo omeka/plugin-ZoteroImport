@@ -43,6 +43,14 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
         // Raise the memory limit.
         ini_set('memory_limit', '500M');
         
+        // Add the before_insert_file hook during import if the required ZIP 
+        // library exists.
+        if (class_exists('ZipArchive')) {
+            get_plugin_broker()->addHook('before_insert_file', 
+                                         'ZoteroImportPlugin::beforeInsertFile', 
+                                         'ZoteroImport');
+        }
+        
         // Set the arguments.
         $this->_libraryId           = $args['libraryId'];
         $this->_libraryType         = $args['libraryType'];
@@ -174,54 +182,11 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
                                                $item->itemType(), 
                                                $item->updated());
                 
-                // Zotero stores web snapshots in ZIP files containing base64 
-                // encoded filenames. Decode these filenames if able.
-                if (class_exists('ZipArchive')) {
-                    $this->_base64DecodeZip($omekaItem);
-                }
-                
                 release_object($item);
                 release_object($omekaItem);
             }
             
         } while ($feed->link('self') != $feed->link('last'));
-    }
-    
-    /**
-     * Base64 decode the filenames if files are valid ZIP archives.
-     * 
-     * @link https://www.zotero.org/trac/browser/extension/trunk/chrome/content/zotero/xpcom/utilities.js#L995
-     * @param Item $item
-     */
-    protected function _base64DecodeZip($item)
-    {
-        // Iterate all the item's files.
-        foreach ($item->Files as $file) {
-            // Skip this file if it does not have a ".zip" file extension. This 
-            // is needed because ZipArchive::open() sometimes opens files that 
-            // are not ZIP archives.
-            if (!preg_match('/\.zip$/', $file->archive_filename)) {
-                continue;
-            }
-            $za = new ZipArchive;
-            // Skip this file if an error occurs. ZipArchive::open() will return 
-            // true if valid, error codes otherwise.
-            if (true !== $za->open($file->getPath('archive'))) {
-                continue;
-            }
-            // Rename each file in the archive.
-            for ($i = 0; $i < $za->numFiles; $i++) {
-                $stat = $za->statIndex($i);
-                // Encoded filenames end with %ZB64, remove prior to decoding.
-                $name = preg_replace('/%ZB64$/', '', $stat['name']);
-                // Base64 decode the filename.
-                $name = base64_decode($name);
-                // Some decoded filenames end with @22, remove prior to renaming.
-                $name = preg_replace('/@22$/', '', $name);
-                $za->renameIndex($i, $name);
-            }
-            $za->close();
-        }
     }
     
     /**
