@@ -392,7 +392,7 @@ ORDER BY et.text";
         // Skip this file if an error occurs. ZipArchive::open() will return 
         // true if valid, error codes otherwise.
         if (true !== $za->open($file->getPath('archive'))) {
-            continue;
+            return;
         }
         
         // Rename each file in the archive.
