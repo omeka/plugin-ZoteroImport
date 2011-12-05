@@ -350,7 +350,7 @@ ORDER BY et.text";
      */
     public static function itemBrowseSql($select, $params)
     {
-        if (strlen($_GET['zotero_item_type'])) {
+        if (isset($_GET['zotero_item_type'])) {
             $db = get_db();
             $select->join(array('et' => $db->prefix.'element_texts'), 'et.record_id = i.id', array())
                    ->join(array('e' => $db->prefix.'elements'), 'et.element_id = e.id', array())
