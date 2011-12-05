@@ -21,10 +21,10 @@ class ZoteroApiClient_Validate_Zoteroapiurl extends Zend_Validate_Abstract
     
     protected $_method;
     protected $_methods = array(
-        'groupItems' => '/groups/\d+/items/?$', 
-        'userItems' => '/users/\d+/items/?$', 
-        'groupCollectionItems' => '/groups/\d+/collections/.+/items/?$', 
-        'userCollectionItems' => '/users/\d+/collections/.+/items/?$'
+        'groupItems' => '/groups/\d+/items(/top)?/?$', 
+        'userItems' => '/users/\d+/items(/top)?/?$', 
+        'groupCollectionItems' => '/groups/\d+/collections/.+/items(/top)?/?$', 
+        'userCollectionItems' => '/users/\d+/collections/.+/items(/top)?/?$'
     );
     
     protected $_messageTemplates = array(
