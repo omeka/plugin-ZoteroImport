@@ -333,7 +333,7 @@ ORDER BY et.text";
         // The array of Zotero Item Types
         $zoteroItemTypes = self::getZoteroItemTypes();
         
-        $html .= '<div class="field">';
+        $html = '<div class="field">';
         $html .= label('zotero_item_type','Zotero Item Type');
         $html .= '<div class="inputs">';
         $html .= select(array('name' => 'zotero_item_type', 'id' => 'zotero_item_type'), $zoteroItemTypes);
@@ -350,7 +350,7 @@ ORDER BY et.text";
      */
     public static function itemBrowseSql($select, $params)
     {
-        if (isset($_GET['zotero_item_type'])) {
+        if (!empty($_GET['zotero_item_type'])) {
             $db = get_db();
             $select->join(array('et' => $db->prefix.'element_texts'), 'et.record_id = i.id', array())
                    ->join(array('e' => $db->prefix.'elements'), 'et.element_id = e.id', array())
