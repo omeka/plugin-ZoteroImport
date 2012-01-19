@@ -395,18 +395,17 @@ ORDER BY et.text";
             return;
         }
         
-        // Rename each file in the archive.
+        // Base64 decode each file in the archive if needed.
         for ($i = 0; $i < $za->numFiles; $i++) {
             $stat = $za->statIndex($i);
-            // Encoded filenames end with %ZB64, remove prior to decoding.
-            $name = preg_replace('/%ZB64$/', '', $stat['name']);
-            // Base64 decode the filename.
-            $name = base64_decode($name);
-            // Some decoded filenames begin with @22, remove prior to renaming.
-            $name = preg_replace('/^@22/', '', $name);
-            // Some decoded filenames end with @22, remove prior to renaming.
-            $name = preg_replace('/@22$/', '', $name);
-            $za->renameIndex($i, $name);
+            // Filenames that end with "%ZB64" are Base64 encoded.
+            if (preg_match('/%ZB64$/', $stat['name'])) {
+                // Remove "%ZB64" prior to decoding.
+                $name = preg_replace('/%ZB64$/', '', $stat['name']);
+                // Base64 decode the filename and rename the file.
+                $name = base64_decode($name);
+                $za->renameIndex($i, $name);
+            }
         }
         
         $za->close();
