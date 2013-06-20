@@ -339,9 +339,10 @@ ORDER BY et.text";
      * @return Zend_Db_Select
      */
     public function hookItemBrowseSql($args)
+    {
     	$select = $args['select'];
     	$params = $args['params'];
-    {
+    
         if (!empty($_GET['zotero_item_type'])) {
             $db = $this->_get_db();
             $select->join(array('et' => $db->ElementTexts), 'et.record_id = i.id', array())
