@@ -1,32 +1,30 @@
 <?php
 /**
- * ZoteroImport
- *
- * @copyright Copyright 2008-2012 Roy Rosenzweig Center for History and New Media
- * @license http://www.gnu.org/licenses/gpl-3.0.txt GNU GPLv3
+ * @version $Id$
+ * @copyright Center for History and New Media, 2007-2010
+ * @license http://www.gnu.org/licenses/gpl-3.0.txt
+ * @package ZoteroImport
  */
 
+add_plugin_hook('install', 'ZoteroImportPlugin::install');
+add_plugin_hook('uninstall', 'ZoteroImportPlugin::uninstall');
+add_plugin_hook('upgrade', 'ZoteroImportPlugin::upgrade');
+add_plugin_hook('admin_append_to_plugin_uninstall_message', 'ZoteroImportPlugin::adminAppendToPluginUninstallMessage');
+
+add_filter('admin_navigation_main', 'ZoteroImportPlugin::adminNavigationMain');
+
+add_plugin_hook('admin_append_to_advanced_search', 'ZoteroImportPlugin::advancedSearch');
+add_plugin_hook('item_browse_sql', 'ZoteroImportPlugin::itemBrowseSql');
+add_plugin_hook('define_acl', 'ZoteroImportPlugin::defineAcl');
 
 /**
  * Contains code used to integrate Zotero Import into Omeka.
  *
  * @package ZoteroImport
  */
-class ZoteroImportPlugin extends Omeka_Plugin_AbstractPlugin
+class ZoteroImportPlugin
 {
-	/**
-     * @var array Hooks for the plugin.
-     */
-    protected $_hooks = array('install', 'uninstall', 'upgrade',
-        'uninstall_message', 'admin_items_search',
-        'item_browse_sql','define_acl');
-
-    /**
-     * @var array Filters for the plugin.
-     */
-    protected $_filters = array('admin_navigation_main');
-
-	const ZOTERO_ELEMENT_SET_NAME = 'Zotero';
+    const ZOTERO_ELEMENT_SET_NAME = 'Zotero';
 
     /**
      * Zotero-to-Omeka mapping table.
@@ -189,9 +187,10 @@ class ZoteroImportPlugin extends Omeka_Plugin_AbstractPlugin
     /**
      * Installs the Zotero Import plugin.
      */
-public function hookInstall()
+    public static function install()
     {
-        $db = $this->_db;
+        $db = get_db();
+
         // Don't install if an element set by the name "Zotero" already exists.
         if ($db->getTable('ElementSet')->findByName(self::ZOTERO_ELEMENT_SET_NAME)) {
             throw new Exception('An element set by the name "' . self::ZOTERO_ELEMENT_SET_NAME . '" already exists. You must delete that element set to install this plugin.');
@@ -213,94 +212,104 @@ public function hookInstall()
         }
         insert_element_set($elementSetMetadata, $elements);
 
-// Create the plugin's tables.
+        // Create the plugin's tables.
         $sql = "
-		CREATE TABLE IF NOT EXISTS '$db->ZoteroImportImport` (
-  		`id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  		`process_id` int(10) unsigned DEFAULT NULL,
-  		`collection_id` int(10) unsigned DEFAULT NULL,
-  		PRIMARY KEY (`id`)
-		) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
+CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_imports` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `process_id` int(10) unsigned DEFAULT NULL,
+  `collection_id` int(10) unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
         $db->query($sql);
 
         $sql = "
-		CREATE TABLE IF NOT EXISTS `$db->ZoteroImportItems` (
-  		`id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  		`import_id` int(10) unsigned NOT NULL,
-  		`item_id` int(10) unsigned DEFAULT NULL,
-  		`zotero_item_key` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
-  		`zotero_item_parent_key` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
-  		`zotero_item_type` varchar(30) COLLATE utf8_unicode_ci NOT NULL,
-  		`zotero_updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
- 		 PRIMARY KEY (`id`)
-		) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
+CREATE TABLE IF NOT EXISTS `{$db->prefix}zotero_import_items` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `import_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned DEFAULT NULL,
+  `zotero_item_key` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `zotero_item_parent_key` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `zotero_item_type` varchar(30) COLLATE utf8_unicode_ci NOT NULL,
+  `zotero_updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
         $db->query($sql);
-
-        $this->_installOptions();
     }
 
-	/**
- 	* Uninstall the plugin.
- 	*/
-    public function hookUninstall()
-    {        
-        // Drop the table.
-        $db = $this->_db;
-        $sql = "DROP TABLE IF EXISTS `$db->ZoteroImportImport`";
-        $db->query($sql);
-        $sql = "DROP TABLE IF EXISTS `$db->ZoteroImportItems`";
-        $db->query($sql);
-
-        $this->_uninstallOptions();
-    }
-
-	/**
-     * Upgrade the plugin.
-     *
-     * @param array $args contains: 'old_version' and 'new_version'
+    /**
+     * Uninstalls the Zotero Import plugin.
      */
-    public function hookUpgrade($args)
+    public static function uninstall()
     {
- 		$oldVersion = $args['old_version'];
-        $newVersion = $args['new_version'];
-        $db = $this->_db;
+        $db = get_db();
 
-        if ($oldVersion == '1.1') {
-        	// Zotero changed the way it identifies items from a numeric ID
-            // to an alphanumeric key. These changes fix this.
-                $sql = "ALTER TABLE `$db->ZoteroImportItems`
+        // Delete the "Zotero" element set if it exists.
+        $elementSet = $db->getTable('ElementSet')->findByName(self::ZOTERO_ELEMENT_SET_NAME);
+        if ($elementSet) {
+            $elementSet->delete();
+        }
+
+        // DROP all tables created during installation.
+        $sql = "DROP TABLE IF EXISTS `{$db->prefix}zotero_import_imports`";
+        $db->query($sql);
+        $sql = "DROP TABLE IF EXISTS `{$db->prefix}zotero_import_items`";
+        $db->query($sql);
+    }
+
+    public static function upgrade($oldVersion, $newVersion)
+    {
+        $db = get_db();
+        switch ($oldVersion) {
+            case '1.1':
+                // Zotero changed the way it identifies items from a numeric ID
+                // to an alphanumeric key. These changes fix this.
+                $sql = "ALTER TABLE `{$db->prefix}zotero_import_items`
                         CHANGE `zotero_item_id` `zotero_item_key` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
                         CHANGE `zotero_item_parent_id` `zotero_item_parent_key` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL";
                  $db->query($sql);
+            default:
+                break;
         }
-
     }
 
     /**
      * Appends a warning message to the uninstall confirmation page.
      */
-    public function hookUninstallMessage()
+    public static function adminAppendToPluginUninstallMessage()
     {
         echo '<p><strong>Warning</strong>: This will permanently delete the "' . self::ZOTERO_ELEMENT_SET_NAME . '" element set and all text mapped to it during import. Text mapped to the Dublin Core element set will not be touched. You may deactivate this plugin if you do not want to lose data.</p>';
     }
 
- 	/**
+    /**
+     * Adds a Zotero Import tab to the admin navigation.
+     *
+     * @param array $nav
+     * @return array
+     */
+    public static function adminNavigationMain($nav)
+    {
+        if(has_permission('ZoteroImport_Index', 'index')) {
+            $nav['Zotero Import'] = uri('zotero-import');
+        }
+        return $nav;
+    }
+
+    /**
      * Gets all the Zotero Item Types in a format designed to be used by
      * Zend_View_Helper_FormSelect.
      *
      * @return array
      */
-   
     public static function getZoteroItemTypes()
     {
-        $db = $this->_db;
+        $db = get_db();
 
         $sql = "
 SELECT DISTINCT(et.text), e.id
-FROM {$db->ElementTexts} et
-JOIN {$db->Elements} e
+FROM `{$db->prefix}element_texts` et
+JOIN `{$db->prefix}elements` e
 ON et.element_id = e.id
-JOIN {$db->ElementSets} es
+JOIN `{$db->prefix}element_sets` es
 ON e.element_set_id = es.id
 WHERE e.name = '" . self::$zoteroFields['itemType'][0] . "'
 AND es.name = '" . self::ZOTERO_ELEMENT_SET_NAME . "'
@@ -313,12 +322,13 @@ ORDER BY et.text";
         }
 
         return $zoteroItemTypes;
-    }   
-	/**
+    }
+
+    /**
      * Appends a narrow by Zotero Item Type select menu to the admin advanced
      * search.
      */
-    public function hookAdminItemsSearch()
+    public static function advancedSearch()
     {
         // The array of Zotero Item Types
         $zoteroItemTypes = self::getZoteroItemTypes();
@@ -338,15 +348,13 @@ ORDER BY et.text";
      *
      * @return Zend_Db_Select
      */
-    public function hookItemBrowseSql($args)
-    	$select = $args['select'];
-    	$params = $args['params'];
+    public static function itemBrowseSql($select, $params)
     {
         if (!empty($_GET['zotero_item_type'])) {
-            $db = $this->_get_db();
-            $select->join(array('et' => $db->ElementTexts), 'et.record_id = i.id', array())
-                   ->join(array('e' => $db->Elements), 'et.element_id = e.id', array())
-                   ->join(array('es' => $db->ElementSets), 'e.element_set_id = es.id', array())
+            $db = get_db();
+            $select->join(array('et' => $db->prefix.'element_texts'), 'et.record_id = i.id', array())
+                   ->join(array('e' => $db->prefix.'elements'), 'et.element_id = e.id', array())
+                   ->join(array('es' => $db->prefix.'element_sets'), 'e.element_set_id = es.id', array())
                    ->where('es.name = ?', self::ZOTERO_ELEMENT_SET_NAME)
                    ->where('e.name = ?', self::$zoteroFields['itemType'][0])
                    ->where('et.text = ?', $_GET['zotero_item_type']);
@@ -355,15 +363,12 @@ ORDER BY et.text";
         return $select;
     }
 
-    public function hookDefineAcl($args)
+    public static function defineAcl($acl)
     {
-    	$acl = $args['acl'];
-
-    	$indexResource = new Zend_Acl_Resource('ZoteroImport_Index');
         if (version_compare(OMEKA_VERSION, '2.0-dev', '>=')) {
-            $acl->add('ZoteroImport_Index');
+            $acl->addResource('ZoteroImport_Index');
         } else {
-            $acl->add(
+            $acl->loadResourceList(
                 array('ZoteroImport_Index' => array('index', 'import-library', 'stop-import', 'delete-import'))
             );
         }
@@ -371,23 +376,6 @@ ORDER BY et.text";
     }
 
     /**
-     * Adds a Zotero Import tab to the admin navigation.  
-     * Uses is_allowed instead of deprecated has_permission
-     * @param array $nav
-     * @return array
-     */
-    public function filterAdminNavigationMain($nav)
-    {
-        if(is_allowed('ZoteroImport_Index', 'index')) {
-            $nav[] = array(
-            	          'label' => 'Zotero Import',
-            	           'uri' => url('zotero-import')
-            	           );
-        }
-        return $nav;
-    }
-
-/**
      * Decode ZIP filenames.
      *
      * Zotero stores web snapshots in ZIP files containing base64 encoded
@@ -440,7 +428,7 @@ ORDER BY et.text";
  */
 function zotero_import_get_items_by_zotero_item_type($typeName, $collectionId = null, $limit = 10)
 {
-     $db = $this->_db;
+    $db = get_db();
 
     // Get the Zotero:Item Type element
     $element = $db->getTable('Element')->findByElementSetNameAndElementName('Zotero', 'Item Type');
@@ -504,14 +492,3 @@ function zotero_import_build_zotero_output(array $parts = array())
     }
     return $output;
 }
-
-
-
-
-
-
-
-
-
-
-
