@@ -215,7 +215,7 @@ public function hookInstall()
 
 // Create the plugin's tables.
         $sql = "
-		CREATE TABLE IF NOT EXISTS '$db->ZoteroImportImport` (
+		CREATE TABLE IF NOT EXISTS `$db->ZoteroImportImport` (
   		`id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   		`process_id` int(10) unsigned DEFAULT NULL,
   		`collection_id` int(10) unsigned DEFAULT NULL,
@@ -224,7 +224,7 @@ public function hookInstall()
         $db->query($sql);
 
         $sql = "
-		CREATE TABLE IF NOT EXISTS `$db->ZoteroImportItems` (
+		CREATE TABLE IF NOT EXISTS `$db->ZoteroImportItem` (
   		`id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   		`import_id` int(10) unsigned NOT NULL,
   		`item_id` int(10) unsigned DEFAULT NULL,
@@ -248,7 +248,7 @@ public function hookInstall()
         $db = $this->_db;
         $sql = "DROP TABLE IF EXISTS `$db->ZoteroImportImport`";
         $db->query($sql);
-        $sql = "DROP TABLE IF EXISTS `$db->ZoteroImportItems`";
+        $sql = "DROP TABLE IF EXISTS `$db->ZoteroImportItem`";
         $db->query($sql);
 
         $this->_uninstallOptions();
@@ -268,7 +268,7 @@ public function hookInstall()
         if ($oldVersion == '1.1') {
         	// Zotero changed the way it identifies items from a numeric ID
             // to an alphanumeric key. These changes fix this.
-                $sql = "ALTER TABLE `$db->ZoteroImportItems`
+                $sql = "ALTER TABLE `$db->ZoteroImportItem`
                         CHANGE `zotero_item_id` `zotero_item_key` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
                         CHANGE `zotero_item_parent_id` `zotero_item_parent_key` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL ENGINE = InnoDB";
                  $db->query($sql);
@@ -362,7 +362,7 @@ ORDER BY et.text";
 
     	$indexResource = new Zend_Acl_Resource('ZoteroImport_Index');
         if (version_compare(OMEKA_VERSION, '2.0-dev', '>=')) {
-            $acl->add('ZoteroImport_Index');
+            $acl->add($indexResource);
         } else {
             $acl->add(
                 array('ZoteroImport_Index' => array('index', 'import-library', 'stop-import', 'delete-import'))
