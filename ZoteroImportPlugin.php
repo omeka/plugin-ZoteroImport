@@ -270,7 +270,7 @@ public function hookInstall()
             // to an alphanumeric key. These changes fix this.
                 $sql = "ALTER TABLE `$db->ZoteroImportItems`
                         CHANGE `zotero_item_id` `zotero_item_key` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
-                        CHANGE `zotero_item_parent_id` `zotero_item_parent_key` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL";
+                        CHANGE `zotero_item_parent_id` `zotero_item_parent_key` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL ENGINE = InnoDB";
                  $db->query($sql);
         }
 
