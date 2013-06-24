@@ -11,7 +11,7 @@
  * 
  * @package ZoteroImport
  */
-class ZoteroImport_IndexController extends Omeka_Controller_Action
+class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionController 
 {    
     const PROCESS_CLASS_IMPORT = 'ZoteroImport_ImportProcess';
     const PROCESS_CLASS_DELETE_IMPORT = 'ZoteroImport_DeleteImportProcess';
@@ -90,7 +90,8 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
      */
     public function stopImportAction()
     {
-        $process = $this->getTable('Process')->find($this->_getParam('processId'));
+        //$process = $this->getTable('Process')->find($this->_getParam('processId'));
+        $process = $this->_helper->db->getTable('Process')->find('processId');
         if (ProcessDispatcher::stopProcess($process)) {
             $this->flashSuccess('The import process has been stopped.');
             $this->redirect->goto('index');
@@ -174,7 +175,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
             return;
         }
         if (!$this->_imports) {
-            $this->_imports = $this->getTable('ZoteroImportImport')->findAll();
+            $this->_imports = $this->_helper->db->getTable('ZoteroImportImport')->findAll();
         }
         $this->view->assign('imports', $this->_imports);
     }
