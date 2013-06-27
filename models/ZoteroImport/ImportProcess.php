@@ -16,7 +16,7 @@ require_once 'Zend/Uri.php';
  * 
  * @package ZoteroImport
  */
-class ZoteroImport_ImportProcess extends ProcessAbstract
+class ZoteroImport_ImportProcess extends Omeka_Job_AbstractJob
 {
     protected $_libraryId;
     protected $_libraryType;
@@ -38,7 +38,7 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
      * 
      * @param array $args Required arguments to run the process.
      */
-    public function run($args)
+    public function perform($args)
     {
         // Raise the memory limit.
         ini_set('memory_limit', '500M');

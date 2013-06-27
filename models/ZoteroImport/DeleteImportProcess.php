@@ -11,7 +11,7 @@
  * 
  * @package ZoteroImport
  */
-class ZoteroImport_DeleteImportProcess extends ProcessAbstract
+class ZoteroImport_DeleteImportProcess extends Omeka_Job_AbstractJob
 {
     protected $_db;
     protected $_processId;
@@ -21,7 +21,7 @@ class ZoteroImport_DeleteImportProcess extends ProcessAbstract
      * 
      * @param array $args Required arguments to run the process.
      */
-    public function run($args)
+    public function perform($args)
     {
         ini_set('memory_limit', '500M');
         $this->_db = get_db();

@@ -36,7 +36,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionContro
         $form = $this->_getFeedForm();
         
         if (!$form->isValid($_POST)) {
-            $this->flashError('There are errors in the form. Please check below and resubmit.');
+            $this->_helper->flashMessenger('There are errors in the form. Please check below and resubmit.', 'error');
             $this->_assignFeedForm($form);
             $this->_assignImports();
             return $this->render('index');
@@ -75,14 +75,14 @@ class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionContro
                       'privateKey'          => $this->_getParam('private_key'), 
                       'collectionId'        => $collection->id, 
                       'zoteroImportId'      => $zoteroImport->id);
-        $process = ProcessDispatcher::startProcess(self::PROCESS_CLASS_IMPORT, null, $args);
+        $process = Zend_Registry::get('bootstrap')->getResource('jobs')->sendLongRunning('ZoteroImport_ImportProcess', $args);
         
         // Set the zotero import process id.
         $zoteroImport->process_id = $process->id;
         $zoteroImport->save();
         
-        $this->flashSuccess("Importing the $libraryType library. This may take a while.");
-        $this->redirect->goto('index');
+        $this->_helper->flashMessenger("Importing the $libraryType library. This may take a while.", 'success');
+        $this->_helper->redirector('index');
     }
     
     /**
@@ -90,13 +90,12 @@ class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionContro
      */
     public function stopImportAction()
     {
-        //$process = $this->getTable('Process')->find($this->_getParam('processId'));
         $process = $this->_helper->db->getTable('Process')->find('processId');
         if (ProcessDispatcher::stopProcess($process)) {
-            $this->flashSuccess('The import process has been stopped.');
+            $this->_helper->flashMessenger('The import process has been stopped.', 'success');
             $this->redirect->goto('index');
         } else {
-            $this->flashError('The import process could not be stopped.');
+            $this->_helper->flashMessenger('The import process could not be stopped.', 'error');
             $this->_assignFeedForm();
             $this->_assignImports();
             return $this->render('index');
@@ -108,11 +107,12 @@ class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionContro
      */
     public function deleteImportAction()
     {
-        $process = $this->getTable('Process')->find($this->_getParam('processId'));
-        $process = ProcessDispatcher::startProcess(self::PROCESS_CLASS_DELETE_IMPORT, 
-                                                   null, 
-                                                   array('processId' => $process->id));
-        $this->flashSuccess('Deleting the import. This may take a while');
+        $process = $this->_helper->db->getTable('Process')->find($this->_getParam('processId'));
+          $process = Zend_Registry::get('bootstrap')->getResource('jobs')->sendLongRunning('ZoteroImport_DeleteImportProcess', $args);
+        $zoteroImport->process_id = $process->id;
+        $zoteroImport->delete();
+        
+        $this->_helper->flashMessenger('Deleting the import. This may take a while', 'success');
         $this->redirect->goto('index');
     }
     

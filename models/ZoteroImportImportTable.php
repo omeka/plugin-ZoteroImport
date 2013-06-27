@@ -23,10 +23,12 @@ class ZoteroImportImportTable extends Omeka_Db_Table
         $select = $this->getSelect();
         $db = $this->getDb();
         
-        $select->join(array('c' => $db->Collection), 'c.id = z.collection_id', array('name'))
-               ->join(array('p' => $db->Process), 'p.id = z.process_id', array('pid', 'status', 'started', 'stopped'))
-               ->order(array('z.id ASC'));
-        
+           $pAlias = $db->getTable('Process')->getTableAlias();
+           $zAlias = $db->getTable('ZoteroImportImport')->getTableAlias();
+
+           $select->join(array($pAlias => $db->Process),
+                               "$pAlias.id = $zAlias.process_id", array('pid', 'status', 'started', 'stopped'))
+                  ->order(array("$zAlias.id ASC"));      
         return $this->fetchObjects($select);
     }
 }
