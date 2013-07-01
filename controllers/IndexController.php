@@ -61,7 +61,6 @@ class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionContro
                                                $libraryType, 
                                                $libraryCollectionId, 
                                                $this->_getParam('private_key'));
-        
         // Save a row in Zotero import.
         require_once 'ZoteroImportImport.php';
         $zoteroImport = new ZoteroImportImport;
@@ -75,13 +74,14 @@ class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionContro
                       'privateKey'          => $this->_getParam('private_key'), 
                       'collectionId'        => $collection->id, 
                       'zoteroImportId'      => $zoteroImport->id);
-        $process = Zend_Registry::get('bootstrap')->getResource('jobs')->sendLongRunning('ZoteroImport_ImportProcess', $args);
+//debug(print_r($args,true));
+        $process = Zend_Registry::get('bootstrap')->getResource('jobs')->sendLongRunning('Job_ZoteroImport', $args);
         
         // Set the zotero import process id.
         $zoteroImport->process_id = $process->id;
         $zoteroImport->save();
         
-        $this->_helper->flashMessenger("Importing the $libraryType library. This may take a while.", 'success');
+        $this->_helper->flashMessenger("Importing the $libraryType and library. This may take a while.", 'success');
         $this->_helper->redirector('index');
     }
     
@@ -108,7 +108,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionContro
     public function deleteImportAction()
     {
         $process = $this->_helper->db->getTable('Process')->find($this->_getParam('processId'));
-          $process = Zend_Registry::get('bootstrap')->getResource('jobs')->sendLongRunning('ZoteroImport_DeleteImportProcess', $args);
+          $process = Zend_Registry::get('bootstrap')->getResource('jobs')->sendLongRunning('Job_ZoteroImport', $args);
         $zoteroImport->process_id = $process->id;
         $zoteroImport->delete();
         
@@ -140,9 +140,11 @@ class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionContro
             $method = "{$libraryType}ItemsTop";
             $feed = $z->$method($libraryId);
             $name = trim(preg_replace('#.+/(.+)/.+#', '$1', $feed->title()));
+//debug(print_r($feed,true));            
         }
         $collectionMetadata = array('public' => true, 
                                     'name'   => $name);
+//debug(print_r($collectionMetadata,true));
         return insert_collection($collectionMetadata);
     }
     
