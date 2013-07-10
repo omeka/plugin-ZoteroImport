@@ -1,6 +1,6 @@
 <?php
 $head = array('title' => html_escape('Zotero Import | Index'));
-head($head);
+echo head($head);
 ?>
 <h1><?php echo $head['title']; ?></h1>
 <div id="primary">

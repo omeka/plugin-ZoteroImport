@@ -110,7 +110,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionContro
     public function deleteImportAction()
     {
         $process = $this->_helper->db->getTable('Process')->find($this->_getParam('processId'));
-          $process = Zend_Registry::get('bootstrap')->getResource('jobs')->sendLongRunning('Job_ZoteroImport', $args);
+        $process = Zend_Registry::get('bootstrap')->getResource('jobs')->sendLongRunning('Job_ZoteroImport', $args);
         $zoteroImport->process_id = $process->id;
         $zoteroImport->delete();
         
@@ -142,8 +142,9 @@ class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionContro
             $method = "{$libraryType}ItemsTop";
             $feed = $z->$method($libraryId);
             $name = trim(preg_replace('#.+/(.+)/.+#', '$1', $feed->title()));
-//debug(print_r($feed,true));            
         }
+//debug(print_r($feed,true));            
+//spits out feed content in an array           
         $collectionMetadata = array('public' => true, 
                                     'name'   => $name);
 //debug(print_r($collectionMetadata,true));
@@ -182,6 +183,8 @@ class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionContro
             $this->_imports = $this->_helper->db->getTable('ZoteroImportImport')->findAll();
         }
         $this->view->assign('imports', $this->_imports);
+//debug(var_dump($this->_imports)); // produces an empty array
+        
     }
     
     /**
