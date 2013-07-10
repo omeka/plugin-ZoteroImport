@@ -75,11 +75,13 @@ class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionContro
                       'collectionId'        => $collection->id, 
                       'zoteroImportId'      => $zoteroImport->id);
 //debug(print_r($args,true));
-        $process = Zend_Registry::get('bootstrap')->getResource('jobs')->sendLongRunning('Job_ZoteroImport', $args);
+        
+       $process = Zend_Registry::get('bootstrap')->getResource('jobs')->sendLongRunning('Job_ZoteroImport', $args);
         
         // Set the zotero import process id.
         $zoteroImport->process_id = $process->id;
         $zoteroImport->save();
+
         
         $this->_helper->flashMessenger("Importing the $libraryType and library. This may take a while.", 'success');
         $this->_helper->redirector('index');

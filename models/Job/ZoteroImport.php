@@ -94,7 +94,6 @@ class Job_ZoteroImport extends Omeka_Job_AbstractJob
                 $start = $query['start'];
             }
             
-debug(print($feed,true));
             // Iterate through this page's entries/items.
             foreach ($feed->entry as $item) {
                 
@@ -175,7 +174,6 @@ debug(print($feed,true));
                 $omekaItem = insert_item($this->_itemMetadata, 
                                          $this->_elementTexts, 
                                          $this->_fileMetadata);
-               //debug(print($omekaItem)); no output to error.log
                 // Save the Zotero item.
                 $this->_insertZoteroImportItem($omekaItem->id, 
                                                $item->key(), 
