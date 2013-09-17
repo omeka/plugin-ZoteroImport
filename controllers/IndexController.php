@@ -65,6 +65,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionContro
         require_once 'ZoteroImportImport.php';
         $zoteroImport = new ZoteroImportImport;
         $zoteroImport->collection_id = $collection->id;
+        $zoteroImport->status = "starting";
         $zoteroImport->save();
         
         // Dispatch the background process.
@@ -74,14 +75,10 @@ class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionContro
                       'privateKey'          => $this->_getParam('private_key'), 
                       'collectionId'        => $collection->id, 
                       'zoteroImportId'      => $zoteroImport->id);
-//debug(print_r($args,true));
-        
        $process = Zend_Registry::get('bootstrap')->getResource('jobs')->sendLongRunning('Job_ZoteroImport', $args);
-        
         // Set the zotero import process id.
-        $zoteroImport->process_id = $process->id;
+        $zoteroImport->process_id = $process->id; 
         $zoteroImport->save();
-
         
         $this->_helper->flashMessenger("Importing the $libraryType and library. This may take a while.", 'success');
         $this->_helper->redirector('index');
@@ -143,12 +140,16 @@ class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionContro
             $feed = $z->$method($libraryId);
             $name = trim(preg_replace('#.+/(.+)/.+#', '$1', $feed->title()));
         }
-//debug(print_r($feed,true));            
-//spits out feed content in an array           
         $collectionMetadata = array('public' => true, 
-                                    'name'   => $name);
-//debug(print_r($collectionMetadata,true));
-        return insert_collection($collectionMetadata);
+                                    'featured' => true);
+        $elementTexts = array(
+                           'Dublin Core' => array(
+		             'Title' => array(
+			          array('text' => $name, 'html' => false)
+  				  ),
+                           ),
+                        );
+        return insert_collection($collectionMetadata,$elementTexts);
     }
     
     /**
@@ -183,7 +184,6 @@ class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionContro
             $this->_imports = $this->_helper->db->getTable('ZoteroImportImport')->findAll();
         }
         $this->view->assign('imports', $this->_imports);
-//debug(var_dump($this->_imports)); // produces an empty array
         
     }
     

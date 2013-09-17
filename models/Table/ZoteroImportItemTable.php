@@ -21,7 +21,7 @@ class Table_ZoteroImportItem extends Omeka_Db_Table
     public function findByImportId($importId)
     {
         $select = $this->getSelect();
-        $select->where('import_id = ?');
+        $select->where('import_id = ?',$importId);
         return $this->fetchObjects($select, array($importId));
     }
 }

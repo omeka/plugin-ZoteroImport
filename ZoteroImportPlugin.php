@@ -217,8 +217,10 @@ public function hookInstall()
         $sql = "
 		CREATE TABLE IF NOT EXISTS `$db->ZoteroImportImport` (
   		`id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  		`process_id` int(10) unsigned DEFAULT NULL,
   		`collection_id` int(10) unsigned DEFAULT NULL,
+                `status` enum('starting', 'in progress', 'completed', 'paused') collate utf8_unicode_ci NOT NULL,
+                `started` timestamp NOT NULL default '0000-00-00 00:00:00',
+                `stopped` timestamp NOT NULL default '0000-00-00 00:00:00',
   		PRIMARY KEY (`id`)
 		) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
         $db->query($sql);
@@ -261,7 +263,7 @@ public function hookInstall()
      */
     public function hookUpgrade($args)
     {
- 		$oldVersion = $args['old_version'];
+ 	$oldVersion = $args['old_version'];
         $newVersion = $args['new_version'];
         $db = $this->_db;
 
@@ -273,7 +275,15 @@ public function hookInstall()
                         CHANGE `zotero_item_parent_id` `zotero_item_parent_key` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL ENGINE = InnoDB";
                  $db->query($sql);
         }
-
+        
+        if(version_compare($newVersion,'2.0.3') == 1) {
+                 $sql = "ALTER TABLE `$db->ZoteroImportImports`
+                         ADD `status` enum('starting', 'in progress', 'completed', 'paused') collate utf8_unicode_ci NOT NULL,
+                         ADD `started` timestamp NOT NULL default '0000-00-00 00:00:00',
+                         ADD `stopped` timestamp NOT NULL default '0000-00-00 00:00:00',
+                         DROP COLUMN process_id";
+                 $db->query($sql);
+       } 
     }
 
     /**

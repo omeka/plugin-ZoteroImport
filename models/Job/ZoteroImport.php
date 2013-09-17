@@ -62,7 +62,7 @@ class Job_ZoteroImport extends Omeka_Job_AbstractJob
         // Set the Zotero client. Make up to 3 request attempts.
         $this->_client = new ZoteroApiClient_Service_Zotero($this->_privateKey, 3);
         
-        $this->_import();
+        $this->_import(); 
     }
     
     /**
@@ -76,8 +76,11 @@ class Job_ZoteroImport extends Omeka_Job_AbstractJob
             // Initialize the start parameter on the first library feed iteration.
             if (!isset($start)) {
                 $start = 0;
+                $zoteroImportImport->started = Zend_Date::now()->toString('yyyy-MM-dd HH:mm:ss');
+                $zoteroImportImport->save();
             }
-            
+           
+ 
             // Get the library feed.
             if ($this->_libraryCollectionId) {
                 $method = "{$this->_libraryType}CollectionItemsTop";
@@ -184,7 +187,8 @@ class Job_ZoteroImport extends Omeka_Job_AbstractJob
                 release_object($item);
                 release_object($omekaItem);
             }
-            
+          
+ 
         } while ($feed->link('self') != $feed->link('last'));
     }
     
@@ -395,7 +399,7 @@ class Job_ZoteroImport extends Omeka_Job_AbstractJob
         $zoteroItem->zotero_item_key        = $zoteroItemKey;
         $zoteroItem->zotero_item_parent_key = $zoteroItemParentKey;
         $zoteroItem->zotero_item_type       = $zoteroItemType;
-        $zoteroItem->zotero_updated         = $zoteroUpdated;
+        $zoteroItem->zotero_updated         = $zoteroUpdated; 
         $zoteroItem->save();
         release_object($zoteroItem);
    }
