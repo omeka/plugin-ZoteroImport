@@ -11,7 +11,7 @@
  * 
  * @package ZoteroImport
  */
-class ZoteroImportImportTable extends Omeka_Db_Table
+class Table_ZoteroImportImport extends Omeka_Db_Table
 {
     /**
      * Finds all the records in this table.

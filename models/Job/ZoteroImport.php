@@ -16,7 +16,7 @@ require_once 'Zend/Uri.php';
  * 
  * @package ZoteroImport
  */
-class ZoteroImport_ImportProcess extends Omeka_Job_AbstractJob
+class Job_ZoteroImport extends Omeka_Job_AbstractJob
 {
     protected $_libraryId;
     protected $_libraryType;
@@ -38,7 +38,7 @@ class ZoteroImport_ImportProcess extends Omeka_Job_AbstractJob
      * 
      * @param array $args Required arguments to run the process.
      */
-    public function perform($args)
+    public function perform()
     {
         // Raise the memory limit.
         ini_set('memory_limit', '500M');
@@ -52,17 +52,17 @@ class ZoteroImport_ImportProcess extends Omeka_Job_AbstractJob
         }
         
         // Set the arguments.
-        $this->_libraryId           = $args['libraryId'];
-        $this->_libraryType         = $args['libraryType'];
-        $this->_libraryCollectionId = $args['libraryCollectionId'];
-        $this->_privateKey          = $args['privateKey'];
-        $this->_collectionId        = $args['collectionId'];
-        $this->_zoteroImportId      = $args['zoteroImportId'];
+        $this->_libraryId           = $this->_options['libraryId'];
+        $this->_libraryType         = $this->_options['libraryType'];
+        $this->_libraryCollectionId = $this->_options['libraryCollectionId'];
+        $this->_privateKey          = $this->_options['privateKey'];
+        $this->_collectionId        = $this->_options['collectionId'];
+        $this->_zoteroImportId      = $this->_options['zoteroImportId'];
         
         // Set the Zotero client. Make up to 3 request attempts.
         $this->_client = new ZoteroApiClient_Service_Zotero($this->_privateKey, 3);
         
-        $this->_import();
+        $this->_import(); 
     }
     
     /**
@@ -76,8 +76,11 @@ class ZoteroImport_ImportProcess extends Omeka_Job_AbstractJob
             // Initialize the start parameter on the first library feed iteration.
             if (!isset($start)) {
                 $start = 0;
+                $zoteroImportImport->started = Zend_Date::now()->toString('yyyy-MM-dd HH:mm:ss');
+                $zoteroImportImport->save();
             }
-            
+           
+ 
             // Get the library feed.
             if ($this->_libraryCollectionId) {
                 $method = "{$this->_libraryType}CollectionItemsTop";
@@ -174,7 +177,6 @@ class ZoteroImport_ImportProcess extends Omeka_Job_AbstractJob
                 $omekaItem = insert_item($this->_itemMetadata, 
                                          $this->_elementTexts, 
                                          $this->_fileMetadata);
-                
                 // Save the Zotero item.
                 $this->_insertZoteroImportItem($omekaItem->id, 
                                                $item->key(), 
@@ -185,7 +187,8 @@ class ZoteroImport_ImportProcess extends Omeka_Job_AbstractJob
                 release_object($item);
                 release_object($omekaItem);
             }
-            
+          
+ 
         } while ($feed->link('self') != $feed->link('last'));
     }
     
@@ -396,7 +399,7 @@ class ZoteroImport_ImportProcess extends Omeka_Job_AbstractJob
         $zoteroItem->zotero_item_key        = $zoteroItemKey;
         $zoteroItem->zotero_item_parent_key = $zoteroItemParentKey;
         $zoteroItem->zotero_item_type       = $zoteroItemType;
-        $zoteroItem->zotero_updated         = $zoteroUpdated;
+        $zoteroItem->zotero_updated         = $zoteroUpdated; 
         $zoteroItem->save();
         release_object($zoteroItem);
    }
