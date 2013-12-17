@@ -11,7 +11,7 @@
  * 
  * @package ZoteroImport
  */
-class ZoteroImportImport extends Omeka_Record
+class ZoteroImportImport extends Omeka_Record_AbstractRecord
 {
     public $id;
     public $process_id;

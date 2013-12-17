@@ -1,9 +1,11 @@
 <?php
-$head = array('title' => html_escape('Zotero Import | Index'));
-head($head);
+$head = array(
+    'bodyclass'=>'zotero-import primary',
+    'title' => __('Zotero Import | Index'));
+echo head($head);
 ?>
-<h1><?php echo $head['title']; ?></h1>
-<div id="primary">
+
+
 <?php echo flash(); ?>
 <?php echo $this->form; ?>
 <h2>Imports</h2>
@@ -51,5 +53,5 @@ head($head);
     </tbody>
 </table>
 <?php endif; ?>
-</div>
+
 <?php foot(); ?>

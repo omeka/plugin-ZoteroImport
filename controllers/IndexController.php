@@ -11,7 +11,7 @@
  * 
  * @package ZoteroImport
  */
-class ZoteroImport_IndexController extends Omeka_Controller_Action
+class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionController
 {    
     const PROCESS_CLASS_IMPORT = 'ZoteroImport_ImportProcess';
     const PROCESS_CLASS_DELETE_IMPORT = 'ZoteroImport_DeleteImportProcess';
@@ -36,7 +36,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         $form = $this->_getFeedForm();
         
         if (!$form->isValid($_POST)) {
-            $this->flashError('There are errors in the form. Please check below and resubmit.');
+            $this->_helper->flashMessenger('There are errors in the form. Please check below and resubmit.', 'Error');
             $this->_assignFeedForm($form);
             $this->_assignImports();
             return $this->render('index');
@@ -75,14 +75,19 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
                       'privateKey'          => $this->_getParam('private_key'), 
                       'collectionId'        => $collection->id, 
                       'zoteroImportId'      => $zoteroImport->id);
-        $process = ProcessDispatcher::startProcess(self::PROCESS_CLASS_IMPORT, null, $args);
-        
+        //$process = ProcessDispatcher::startProcess(self::PROCESS_CLASS_IMPORT, null, $args);
+        $jobDispatcher = Zend_Registry::get('bootstrap')->getResource('jobs');
+        $jobDispatcher->setQueueName('zotero_import_imports');
+        $process = $jobDispatcher->sendLongRunning('ZoteroImport_ImportProcess', $args);
         // Set the zotero import process id.
+        
         $zoteroImport->process_id = $process->id;
         $zoteroImport->save();
         
-        $this->flashSuccess("Importing the $libraryType library. This may take a while.");
+        $this->_helper->flashMessenger("Importing the $libraryType library. This may take a while.", 'success');
         $this->redirect->goto('index');
+        //$this->_helper->redirector->goto('index');
+
     }
     
     /**
@@ -174,7 +179,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
             return;
         }
         if (!$this->_imports) {
-            $this->_imports = $this->getTable('ZoteroImportImport')->findAll();
+            $this->_imports = $this->_helper->_db->getTable('ZoteroImportImport')->findAll();
         }
         $this->view->assign('imports', $this->_imports);
     }
