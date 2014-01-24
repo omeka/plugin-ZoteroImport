@@ -212,7 +212,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionContro
      */
     protected function _getLibraryCollectionId()
     {
-        if (!preg_match('#/collections/(.+)/#', $this->_getParam('feedUrl'), $match)) {
+        if (!preg_match('#/collections/([^/]+)/#', $this->_getParam('feedUrl'), $match)) {
             return null;
         }
         return $match[1];
