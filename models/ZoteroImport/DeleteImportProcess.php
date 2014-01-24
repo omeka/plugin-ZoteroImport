@@ -11,7 +11,7 @@
  * 
  * @package ZoteroImport
  */
-class ZoteroImport_DeleteImportProcess extends ProcessAbstract
+class ZoteroImport_DeleteImportProcess extends Omeka_Job_Process_AbstractProcess
 {
     protected $_db;
     protected $_processId;

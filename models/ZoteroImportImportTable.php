@@ -20,13 +20,13 @@ class ZoteroImportImportTable extends Omeka_Db_Table
      */
     public function findAll()
     {
-        $select = $this->getSelect();
         $db = $this->getDb();
-        
-        $select->join(array('c' => $db->Collection), 'c.id = z.collection_id', array('name'))
-               ->join(array('p' => $db->Process), 'p.id = z.process_id', array('pid', 'status', 'started', 'stopped'))
-               ->order(array('z.id ASC'));
-        
-        return $this->fetchObjects($select);
+        $sql = "
+        SELECT *
+        FROM `{$db->prefix}zotero_import_imports` AS `z`
+        JOIN `{$db->prefix}collections` AS `c` ON c.id = z.collection_id
+        JOIN `{$db->prefix}processes` AS `p` ON p.id = z.process_id
+        ORDER BY `z`.`id` ASC";
+        return $this->fetchObjects($sql);
     }
 }

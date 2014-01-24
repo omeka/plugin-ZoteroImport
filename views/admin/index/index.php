@@ -1,8 +1,4 @@
-<?php
-$head = array('title' => html_escape('Zotero Import | Index'));
-head($head);
-?>
-<h1><?php echo $head['title']; ?></h1>
+<?php echo head(array('title' => __('Zotero Import'))); ?>
 <div id="primary">
 <?php echo flash(); ?>
 <?php echo $this->form; ?>
@@ -27,7 +23,7 @@ head($head);
         <td><a href="<?php echo $this->url(array('module'     => 'default', 
                                                  'controller' => 'items', 
                                                  'action'     => 'browse', 
-                                                 'collection' => $import->collection_id)); ?>"><?php echo $import->name ?></a></td>
+                                                 'collection' => $import->collection_id)); ?>"><?php echo metadata(get_record_by_id('collection', $import->collection_id), array('Dublin Core', 'Title')); ?></a></td>
         <td><strong><?php echo ucwords($import->status); ?></strong></td>
         <td><?php echo $import->started; ?></td>
         <td><?php echo $import->stopped; ?></td>
@@ -52,4 +48,4 @@ head($head);
 </table>
 <?php endif; ?>
 </div>
-<?php foot(); ?>
+<?php echo foot(); ?>

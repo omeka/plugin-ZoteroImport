@@ -1,17 +1,5 @@
 <?php
-/**
- * @version $Id$
- * @copyright Center for History and New Media, 2007-2010
- * @license http://www.gnu.org/licenses/gpl-3.0.txt
- * @package ZoteroImport
- */
-
-/**
- * The Zotero Import plugin controller for index pages.
- * 
- * @package ZoteroImport
- */
-class ZoteroImport_IndexController extends Omeka_Controller_Action
+class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionController
 {    
     const PROCESS_CLASS_IMPORT = 'ZoteroImport_ImportProcess';
     const PROCESS_CLASS_DELETE_IMPORT = 'ZoteroImport_DeleteImportProcess';
@@ -36,31 +24,29 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         $form = $this->_getFeedForm();
         
         if (!$form->isValid($_POST)) {
-            $this->flashError('There are errors in the form. Please check below and resubmit.');
+            $this->_helper->flashMessenger('There are errors in the form. Please check below and resubmit.', 'error');
             $this->_assignFeedForm($form);
             $this->_assignImports();
             return $this->render('index');
         }
         
-        $libraryId           = $this->_getLibraryId();
-        $libraryType         = $this->_getLibraryType();
+        $libraryId = $this->_getLibraryId();
+        $libraryType = $this->_getLibraryType();
         $libraryCollectionId = $this->_getLibraryCollectionId();
         
         // Verify that there are no errors when requesting this group.
-        if (!$this->_verifyLibrary($libraryId, 
-                                   $libraryType, 
-                                   $libraryCollectionId, 
-                                   $this->_getParam('private_key'))) {
+        if (!$this->_verifyLibrary($libraryId, $libraryType, $libraryCollectionId, 
+                $this->_getParam('private_key'))
+        ) {
             $this->_assignFeedForm($form);
             $this->_assignImports();
             return $this->render('index');
         }
         
         // Create the collection.
-        $collection = $this->_createCollection($libraryId, 
-                                               $libraryType, 
-                                               $libraryCollectionId, 
-                                               $this->_getParam('private_key'));
+        $collection = $this->_createCollection(
+            $libraryId, $libraryType, $libraryCollectionId, $this->_getParam('private_key')
+        );
         
         // Save a row in Zotero import.
         require_once 'ZoteroImportImport.php';
@@ -69,20 +55,22 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
         $zoteroImport->save();
         
         // Dispatch the background process.
-        $args = array('libraryId'           => $libraryId, 
-                      'libraryType'         => $libraryType, 
-                      'libraryCollectionId' => $libraryCollectionId, 
-                      'privateKey'          => $this->_getParam('private_key'), 
-                      'collectionId'        => $collection->id, 
-                      'zoteroImportId'      => $zoteroImport->id);
-        $process = ProcessDispatcher::startProcess(self::PROCESS_CLASS_IMPORT, null, $args);
+        $args = array(
+            'libraryId'           => $libraryId, 
+            'libraryType'         => $libraryType, 
+            'libraryCollectionId' => $libraryCollectionId, 
+            'privateKey'          => $this->_getParam('private_key'), 
+            'collectionId'        => $collection->id, 
+            'zoteroImportId'      => $zoteroImport->id
+        );
+        $process = Omeka_Job_Process_Dispatcher::startProcess(self::PROCESS_CLASS_IMPORT, null, $args);
         
         // Set the zotero import process id.
         $zoteroImport->process_id = $process->id;
         $zoteroImport->save();
         
-        $this->flashSuccess("Importing the $libraryType library. This may take a while.");
-        $this->redirect->goto('index');
+        $this->_helper->flashMessenger("Importing the $libraryType library. This may take a while.", 'success');
+        $this->_helper->redirector->goto('index');
     }
     
     /**
@@ -90,12 +78,12 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
      */
     public function stopImportAction()
     {
-        $process = $this->getTable('Process')->find($this->_getParam('processId'));
-        if (ProcessDispatcher::stopProcess($process)) {
-            $this->flashSuccess('The import process has been stopped.');
-            $this->redirect->goto('index');
+        $process = $this->_helper->db->getTable('Process')->find($this->_getParam('processId'));
+        if (Omeka_Job_Process_Dispatcher::stopProcess($process)) {
+            $this->_helper->flashMessenger('The import process has been stopped.', 'success');
+            $this->_helper->redirector->goto('index');
         } else {
-            $this->flashError('The import process could not be stopped.');
+            $this->_helper->flashMessenger('The import process could not be stopped.', 'error');
             $this->_assignFeedForm();
             $this->_assignImports();
             return $this->render('index');
@@ -107,12 +95,12 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
      */
     public function deleteImportAction()
     {
-        $process = $this->getTable('Process')->find($this->_getParam('processId'));
-        $process = ProcessDispatcher::startProcess(self::PROCESS_CLASS_DELETE_IMPORT, 
+        $process = $this->_helper->db->getTable('Process')->find($this->_getParam('processId'));
+        $process = Omeka_Job_Process_Dispatcher::startProcess(self::PROCESS_CLASS_DELETE_IMPORT, 
                                                    null, 
                                                    array('processId' => $process->id));
-        $this->flashSuccess('Deleting the import. This may take a while');
-        $this->redirect->goto('index');
+        $this->_helper->flashMessenger('Deleting the import. This may take a while', 'success');
+        $this->_helper->redirector->goto('index');
     }
     
     /**
@@ -140,9 +128,15 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
             $feed = $z->$method($libraryId);
             $name = trim(preg_replace('#.+/(.+)/.+#', '$1', $feed->title()));
         }
-        $collectionMetadata = array('public' => true, 
-                                    'name'   => $name);
-        return insert_collection($collectionMetadata);
+        $collectionMetadata = array('public' => true);
+        $elementTexts = array(
+            'Dublin Core' => array(
+                'Title' => array(
+                    array('text' => $name, 'html' => true)
+                )
+            )
+        );
+        return insert_collection($collectionMetadata, $elementTexts);
     }
     
     /**
@@ -174,7 +168,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
             return;
         }
         if (!$this->_imports) {
-            $this->_imports = $this->getTable('ZoteroImportImport')->findAll();
+            $this->_imports = $this->_helper->db->getTable('ZoteroImportImport')->findAll();
         }
         $this->view->assign('imports', $this->_imports);
     }
@@ -250,7 +244,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_Action
             }
             return true;
         } catch (Exception $e) {
-            $this->flashError($e->getMessage().'. This may indicate that the library or collection does not exist, you do not have access to the library, or the private key is invalid.');
+            $this->_helper->flashMessenger($e->getMessage().'. This may indicate that the library or collection does not exist, you do not have access to the library, or the private key is invalid.', 'error');
             return false;
         }
     }

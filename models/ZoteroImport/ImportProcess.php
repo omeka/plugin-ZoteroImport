@@ -16,7 +16,7 @@ require_once 'Zend/Uri.php';
  * 
  * @package ZoteroImport
  */
-class ZoteroImport_ImportProcess extends ProcessAbstract
+class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
 {
     protected $_libraryId;
     protected $_libraryType;
@@ -46,8 +46,8 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
         // Add the before_insert_file hook during import if the required ZIP 
         // library exists.
         if (class_exists('ZipArchive')) {
-            get_plugin_broker()->addHook('before_insert_file', 
-                                         'ZoteroImportPlugin::beforeInsertFile', 
+            get_plugin_broker()->addHook('before_save_file', 
+                                         'ZoteroImportPlugin::beforeSaveFile', 
                                          'ZoteroImport');
         }
         
@@ -343,19 +343,8 @@ class ZoteroImport_ImportProcess extends ProcessAbstract
         
         // Name the file.
         $uri = Zend_Uri::factory($urls['s3']);
-        // Hack to work around a bug in Omeka 1.2 concerning Source file 
-        // ingests and filenames containing Unicode characters. Omeka 
-        // correctly saves Unicode filenames to the archive, but removes 
-        // the Unicode characters in the database (in `files`.
-        // `archive_filename`). This is fixed in Omeka 1.3.
-        if (version_compare(OMEKA_VERSION, '1.3-dev', '<')) {
-            $name = md5(mt_rand() + microtime(true)) 
-                  . '.' 
-                  . pathinfo($uri->getPath(), PATHINFO_EXTENSION);
         // Set the original filename as the basename of the URL path.
-        } else {
-            $name = urldecode(basename($uri->getPath()));
-        }
+        $name = urldecode(basename($uri->getPath()));
         
         // Set the file metadata.
         $this->_fileMetadata['files'][] = array(
