@@ -296,7 +296,8 @@ class ZoteroImportPlugin extends Omeka_Plugin_AbstractPlugin
     public function hookAdminItemsSearch()
     {
         $formSelect = get_view()->formSelect(
-            'zotero_item_type', null, null, self::getZoteroItemTypes()
+            'zotero_item_type', null, null,
+            label_table_options(self::getZoteroItemTypes())
         );
         echo '
         <div class="field">
