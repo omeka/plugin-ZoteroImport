@@ -381,7 +381,7 @@ class ZoteroApiClient_Service_Zotero extends Zend_Rest_Client
         if (!isset($params['key']) && $this->_privateKey) {
             $params['key'] = $this->_privateKey;
         }
-        return $params;
+        return array('v' => 2) + $params;
     }
     
     /**
