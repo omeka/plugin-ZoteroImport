@@ -395,7 +395,7 @@ function zotero_import_get_items_by_zotero_item_type($typeName, $collectionId = 
 
     // Using the advanced search interface, get a limited set of items that have
     // the provided Zotero:Item Type.
-    $items = get_items(array('collection' => $collectionId,
+    $items = get_records('Item', array('collection' => $collectionId,
                              'recent' => true,
                              'advanced_search' => array(array('type' => 'contains',
                                                               'element_id' => $element->id,
@@ -440,7 +440,7 @@ function zotero_import_build_zotero_output(array $parts = array())
         }
 
         // Set the element text.
-        $elementText = item(ZoteroImportPlugin::ZOTERO_ELEMENT_SET_NAME, $part['element'], $options);
+        $elementText = metadata('item', array(ZoteroImportPlugin::ZOTERO_ELEMENT_SET_NAME, $part['element']), $options);
         if (!$elementText) {
             continue;
         }

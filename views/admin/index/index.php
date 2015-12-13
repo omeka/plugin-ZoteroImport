@@ -4,16 +4,18 @@
 <?php echo $this->form; ?>
 <h2>Imports</h2>
 <?php if (!count($this->imports)): ?>
-<p>No imports found.</p>
+<p><?php echo __('No imports found.'); ?></p>
 <?php else: ?>
 <table>
     <thead>
-        <th>ID</th>
-        <th>Collection Name</th>
-        <th>Status</th>
-        <th>Started</th>
-        <th>Stopped</th>
-        <th></th>
+        <tr>
+            <th><?php echo __('ID'); ?></th>
+            <th><?php echo __('Collection Name'); ?></th>
+            <th><?php echo __('Status'); ?></th>
+            <th><?php echo __('Started'); ?></th>
+            <th><?php echo __('Stopped'); ?></th>
+            <th></th>
+        </tr>
     </thead>
     <tbody>
     <?php $imports = array_reverse($this->imports); ?>
@@ -48,4 +50,4 @@
 </table>
 <?php endif; ?>
 </div>
-<?php echo foot(); ?>
+<?php echo foot();

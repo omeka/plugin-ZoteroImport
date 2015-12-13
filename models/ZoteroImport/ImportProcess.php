@@ -314,7 +314,8 @@ class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
             $this->_elementTexts['Zotero']['Attachment Title'][] = array('text' => $element->title(), 'html' => false);
             
             $urlXpath = '//default:tr[@class="url"]/default:td';
-            if ($url = $this->_contentXpath($element->content, $urlXpath, true)) {
+            $url = $this->_contentXpath($element->content, $urlXpath, true);
+            if ($url) {
                 $this->_elementTexts['Zotero']['Attachment URL'][] = array('text' => $url, 'html' => false);
             
             // If a attachment that is not top-level has no URL, still assign it 
