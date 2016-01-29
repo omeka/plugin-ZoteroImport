@@ -325,7 +325,7 @@ class ZoteroImportPlugin extends Omeka_Plugin_AbstractPlugin
                 ->join(array('element_sets' => $this->_db->prefix.'element_sets'), 'elements.element_set_id = element_sets.id', array())
                 ->where('element_sets.name = ?', self::ELEMENT_SET_NAME)
                 ->where('elements.name = ?', self::$zoteroFields['itemType'][0])
-                ->where('element_texts.text = ?', $_GET['zotero_item_type']);
+                ->where('element_texts.text = ?', $args['params']['zotero_item_type']);
         }
     }
 
