@@ -385,7 +385,7 @@ class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
         $zoteroItem->zotero_item_key        = $zoteroItemKey;
         $zoteroItem->zotero_item_parent_key = $zoteroItemParentKey;
         $zoteroItem->zotero_item_type       = $zoteroItemType;
-        $zoteroItem->zotero_updated         = $zoteroUpdated;
+        $zoteroItem->zotero_updated         = date('Y-m-d H:i:s', strtotime($zoteroUpdated));
         $zoteroItem->save();
         release_object($zoteroItem);
    }
