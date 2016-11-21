@@ -343,8 +343,24 @@ class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
         
         // Name the file.
         $uri = Zend_Uri::factory($urls['s3']);
-        // Set the original filename as the basename of the URL path.
-        $name = urldecode(basename($uri->getPath()));
+
+        // Set the original filename
+        $name = null;
+        $links = $element->link();
+        if ($links) {
+            foreach ($links as $link) {
+                $rel = $link->getAttribute('rel');
+                $title = $link->getAttribute('title');
+                if ($rel == 'enclosure' && $title) {
+                    $name = $title;
+                    break;
+                }
+            }
+        }
+
+        if (!$name) {
+            $name = urldecode(basename($uri->getPath()));
+        }
         
         // Set the file metadata.
         $this->_fileMetadata['files'][] = array(
