@@ -312,17 +312,6 @@ class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
    {
         if (!$topLevelAttachment) {
             $this->_elementTexts['Zotero']['Attachment Title'][] = array('text' => $element->title(), 'html' => false);
-            
-            $urlXpath = '//default:tr[@class="url"]/default:td';
-            if ($url = $this->_contentXpath($element->content, $urlXpath, true)) {
-                $this->_elementTexts['Zotero']['Attachment URL'][] = array('text' => $url, 'html' => false);
-            
-            // If a attachment that is not top-level has no URL, still assign it 
-            // a placeholder to maintain relationships between the "Attachment 
-            // Title" and "Attachment Url" elements.
-            } else {
-                $this->_elementTexts['Zotero']['Attachment URL'][] = array('text' => '[No URL]', 'html' => false);
-            }
         }
         
         // The Zotero API will not return a file unless a private key exists, so 
@@ -343,8 +332,24 @@ class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
         
         // Name the file.
         $uri = Zend_Uri::factory($urls['s3']);
-        // Set the original filename as the basename of the URL path.
-        $name = urldecode(basename($uri->getPath()));
+
+        // Set the original filename
+        $name = null;
+        $links = $element->link();
+        if ($links) {
+            foreach ($links as $link) {
+                $rel = $link->getAttribute('rel');
+                $title = $link->getAttribute('title');
+                if ($rel == 'enclosure' && $title) {
+                    $name = $title;
+                    break;
+                }
+            }
+        }
+
+        if (!$name) {
+            $name = urldecode(basename($uri->getPath()));
+        }
         
         // Set the file metadata.
         $this->_fileMetadata['files'][] = array(
@@ -356,9 +361,6 @@ class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
                     'Title' => array(
                         array('text' => $element->title(), 'html' => false)
                     ),
-                    'Identifier' => array(
-                        array('text' => $url, 'html' => false)
-                    )
                 )
             )
         );
