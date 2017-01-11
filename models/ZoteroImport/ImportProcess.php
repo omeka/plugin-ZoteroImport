@@ -312,17 +312,6 @@ class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
    {
         if (!$topLevelAttachment) {
             $this->_elementTexts['Zotero']['Attachment Title'][] = array('text' => $element->title(), 'html' => false);
-            
-            $urlXpath = '//default:tr[@class="url"]/default:td';
-            if ($url = $this->_contentXpath($element->content, $urlXpath, true)) {
-                $this->_elementTexts['Zotero']['Attachment URL'][] = array('text' => $url, 'html' => false);
-            
-            // If a attachment that is not top-level has no URL, still assign it 
-            // a placeholder to maintain relationships between the "Attachment 
-            // Title" and "Attachment Url" elements.
-            } else {
-                $this->_elementTexts['Zotero']['Attachment URL'][] = array('text' => '[No URL]', 'html' => false);
-            }
         }
         
         // The Zotero API will not return a file unless a private key exists, so 
@@ -372,9 +361,6 @@ class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
                     'Title' => array(
                         array('text' => $element->title(), 'html' => false)
                     ),
-                    'Identifier' => array(
-                        array('text' => $url, 'html' => false)
-                    )
                 )
             )
         );
