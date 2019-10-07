@@ -231,8 +231,9 @@ class ZoteroImportPlugin extends Omeka_Plugin_AbstractPlugin
     /**
      * Upgrade the plugin.
      */
-    public function hookUpgrade($oldVersion, $newVersion)
+    public function hookUpgrade($args)
     {
+        $oldVersion = $args['old_version'];
         if (version_compare($oldVersion, '1.1', '<=')) {
             // Zotero changed the way it identifies items from a numeric ID
             // to an alphanumeric key. These changes fix this.
