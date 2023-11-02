@@ -20,8 +20,6 @@ The plugin also adds a field to the advanced search page that narrows search res
 -   **Sync Zotero library**: The Zotero library must be synced to the Zotero.org server prior to import. To import files, the Zotero client must be set to sync attachment files. You can find     instructions on how to do this at the [Zotero website](http://www.zotero.org/support/sync){target=_blank}. 
     - *Note: the import will not work from Zotero Standalone.*
 
-![Zotero library on the web](../doc_files/plugin_images/Zotero_library_feed.jpg)
-
 -   **Atom Feed URL**: Every Zotero library and collection has an Atom feed URL. You can find this URL on the library or collection page of the Zotero website, under "Subscribe to this feed." Unpublished libraries do not have a feed URL readily accessible, but you can construct it using the following URLs as templates:
     -   user library: `https://api.zotero.org/users/%7BuserID%7D/items`
     -   user collection: `https://api.zotero.org/users/%7BuserID%7D/collections/%7BcollectionKey%7D/items`
