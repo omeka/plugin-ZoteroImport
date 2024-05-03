@@ -2,7 +2,7 @@
 class ZoteroImportPlugin extends Omeka_Plugin_AbstractPlugin
 {
     const ELEMENT_SET_NAME = 'Zotero';
-    
+
     protected $_hooks = array('install', 'uninstall', 'upgrade', 'define_acl',
         'admin_items_search', 'items_browse_sql');
 
@@ -53,7 +53,7 @@ class ZoteroImportPlugin extends Omeka_Plugin_AbstractPlugin
             'wordsBy'        => 'Words By'
         ),
         // Item Type
-        'itemType'             => array('Item Type', 'Type'),
+        'itemType'             => 'Item Type',
         // Note
         'note'                 => 'Note',
         // Fields
