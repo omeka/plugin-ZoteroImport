@@ -13,7 +13,7 @@ require_once 'Zend/Uri.php';
 
 /**
  * The Zotero import process.
- * 
+ *
  * @package ZoteroImport
  */
 class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
@@ -24,33 +24,33 @@ class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
     protected $_privateKey;
     protected $_collectionId;
     protected $_zoteroImportId;
-    
+
     protected $_collection;
     protected $_zoteroImport;
     protected $_client;
-    
+
     protected $_itemMetadata;
     protected $_elementTexts;
     protected $_fileMetadata;
-    
+
     /**
      * Runs the import process.
-     * 
+     *
      * @param array $args Required arguments to run the process.
      */
     public function run($args)
     {
         // Raise the memory limit.
         ini_set('memory_limit', '500M');
-        
-        // Add the before_insert_file hook during import if the required ZIP 
+
+        // Add the before_insert_file hook during import if the required ZIP
         // library exists.
         if (class_exists('ZipArchive')) {
-            get_plugin_broker()->addHook('before_save_file', 
-                                         'ZoteroImportPlugin::beforeSaveFile', 
+            get_plugin_broker()->addHook('before_save_file',
+                                         'ZoteroImportPlugin::beforeSaveFile',
                                          'ZoteroImport');
         }
-        
+
         // Set the arguments.
         $this->_libraryId           = $args['libraryId'];
         $this->_libraryType         = $args['libraryType'];
@@ -58,26 +58,26 @@ class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
         $this->_privateKey          = $args['privateKey'];
         $this->_collectionId        = $args['collectionId'];
         $this->_zoteroImportId      = $args['zoteroImportId'];
-        
+
         // Set the Zotero client. Make up to 3 request attempts.
         $this->_client = new ZoteroApiClient_Service_Zotero($this->_privateKey, 3);
-        
+
         $this->_import();
     }
-    
+
     /**
-     * Performs the import by iterating the Zotero API Atom feeds and mapping 
+     * Performs the import by iterating the Zotero API Atom feeds and mapping
      * each entry to an Omeka item.
      */
     protected function _import()
     {
         do {
-            
+
             // Initialize the start parameter on the first library feed iteration.
             if (!isset($start)) {
                 $start = 0;
             }
-            
+
             // Get the library feed.
             if ($this->_libraryCollectionId) {
                 $method = "{$this->_libraryType}CollectionItemsTop";
@@ -86,33 +86,33 @@ class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
                 $method = "{$this->_libraryType}ItemsTop";
                 $feed = $this->_client->$method($this->_libraryId, array('start' => $start));
             }
-            
+
             // Set the start parameter for the next page iteration.
             if ($feed->link('next')) {
                 $query = parse_url($feed->link('next'), PHP_URL_QUERY);
                 parse_str($query, $query);
                 $start = $query['start'];
             }
-            
+
             // Iterate through this page's entries/items.
             foreach ($feed->entry as $item) {
-                
+
                 // Set default insert_item() arguments.
-                $this->_itemMetadata = array('collection_id' => $this->_collectionId, 
+                $this->_itemMetadata = array('collection_id' => $this->_collectionId,
                                              'public'        => true);
                 $this->_elementTexts = array();
-                $this->_fileMetadata = array('file_transfer_type'  => 'Url', 
+                $this->_fileMetadata = array('file_transfer_type'  => 'Url',
                                              'file_ingest_options' => array('ignore_invalid_files' => true));
-                
+
                 // Map the title.
-                $this->_elementTexts['Dublin Core']['Title'][] = array('text' => $item->title(), 'html' => false);
-                $this->_elementTexts['Zotero']['Title'][] = array('text' => $item->title(), 'html' => false);
-                
+                $this->_elementTexts['Dublin Core']['Title'][] = array('text' => $this->_prepareText($item->title()), 'html' => false);
+                $this->_elementTexts['Zotero']['Title'][] = array('text' => $this->_prepareText($item->title()), 'html' => false);
+
                 // Map top-level attachment item.
                 if ('attachment' == $item->itemType()) {
                     $this->_mapAttachment($item, true);
                 }
-                
+
                 // Map the Zotero API field nodes to Omeka elements.
                 if (is_array($item->content->div->table->tr)) {
                     foreach ($item->content->div->table->tr as $tr) {
@@ -121,26 +121,26 @@ class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
                 } else {
                     $this->_mapFields($item->content->div->table->tr);
                 }
-                
+
                 // Map Zotero tags to Omeka tags, comma-delimited.
                 if ($item->numTags()) {
                     $method = "{$this->_libraryType}ItemTags";
                     $tags = $this->_client->$method($this->_libraryId, $item->key());
                     $tagArray = array();
                     foreach ($tags->entry as $tag) {
-                        // Remove commas from Zotero tags, or Omeka will assume 
+                        // Remove commas from Zotero tags, or Omeka will assume
                         // they are separate tags.
                         $tagArray[] = str_replace(',', ' ', $tag->title);
                     }
                     $this->_itemMetadata['tags'] = join(',', $tagArray);
                 }
-                
+
                 // Map Zotero children (notes & attachments).
                 if ($item->numChildren()) {
                     $method = "{$this->_libraryType}ItemChildren";
                     $children = $this->_client->$method($this->_libraryId, $item->key());
                     foreach ($children->entry as $child) {
-                        
+
                         // Map a Zotero child note to an Omeka item.
                         if ('note' == $child->itemType()) {
                             $noteXpath = '//default:tr[@class="note"]/default:td';
@@ -149,49 +149,49 @@ class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
                             if ($note instanceof SimpleXMLElement) {
                                 $note = trim(preg_replace('#^<td>(.*)</td>$#', '$1', $note->asXML()));
                             }
-                            $this->_elementTexts['Zotero']['Note'][] = array('text' => (string) $note, 'html' => true);
-                        
-                        // Map a Zotero child attachment (file) to a file 
+                            $this->_elementTexts['Zotero']['Note'][] = array('text' => $this->_prepareText((string) $note), 'html' => true);
+
+                        // Map a Zotero child attachment (file) to a file
                         // assigned to the Omeka parent item.
                         } else if ('attachment' == $child->itemType()) {
                             $this->_mapAttachment($child);
-                        
+
                         // Unknown child. Do not map.
                         } else {
                             continue;
                         }
-                        
+
                         // Save the Zotero child item.
-                        $this->_insertZoteroImportItem(null, 
-                                                       $child->key(), 
-                                                       $item->key(), 
-                                                       $child->itemType(), 
+                        $this->_insertZoteroImportItem(null,
+                                                       $child->key(),
+                                                       $item->key(),
+                                                       $child->itemType(),
                                                        $child->updated());
                     }
                 }
-                
+
                 // Insert the item.
-                $omekaItem = insert_item($this->_itemMetadata, 
-                                         $this->_elementTexts, 
+                $omekaItem = insert_item($this->_itemMetadata,
+                                         $this->_elementTexts,
                                          $this->_fileMetadata);
-                
+
                 // Save the Zotero item.
-                $this->_insertZoteroImportItem($omekaItem->id, 
-                                               $item->key(), 
-                                               null, 
-                                               $item->itemType(), 
+                $this->_insertZoteroImportItem($omekaItem->id,
+                                               $item->key(),
+                                               null,
+                                               $item->itemType(),
                                                $item->updated());
-                
+
                 release_object($item);
                 release_object($omekaItem);
             }
-            
+
         } while ($feed->link('self') != $feed->link('last'));
     }
-    
+
     /**
      * Maps Zotero fields to Omeka elements.
-     * 
+     *
      * @param Zend_Feed_Element $tr
      */
     protected function _mapFields(Zend_Feed_Element $tr)
@@ -200,12 +200,12 @@ class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
         if (!array_key_exists($tr['class'], ZoteroImportPlugin::$zoteroFields)) {
             return;
         }
-        
+
         $fieldName = $tr['class'];
         $fieldNameLocale = $tr->th();
         $fieldMap = ZoteroImportPlugin::$zoteroFields[$fieldName];
-        $elementText = $tr->td();
-        
+        $elementText = $this->_prepareText($tr->td());
+
         // Get the element name.
         if ('creator' == $fieldName) {
             foreach ($fieldMap as $zoteroCreatorName => $creatorMap) {
@@ -228,10 +228,10 @@ class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
                 $elementName = $fieldMap;
             }
         }
-        
+
         // Map to the Zotero element set. Set HTML to true if this is a Note.
         $this->_elementTexts['Zotero'][$elementName][] = array('text' => $elementText, 'html' => 'Note' == $elementName ? true : false);
-        
+
         // Map unambiguous fields to the Dublin Core element set.
         switch ($elementName) {
             case 'Subject':
@@ -301,35 +301,35 @@ class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
                 break;
         }
    }
-   
+
    /**
-    * Maps Zotero attachments to Omeka files, et al. 
-    * 
+    * Maps Zotero attachments to Omeka files, et al.
+    *
     * @param Zend_Feed_Element
     * @param bool Flag indicating that this is a top-level attachment.
     */
    protected function _mapAttachment(Zend_Feed_Element $element, $topLevelAttachment = false)
    {
         if (!$topLevelAttachment) {
-            $this->_elementTexts['Zotero']['Attachment Title'][] = array('text' => $element->title(), 'html' => false);
+            $this->_elementTexts['Zotero']['Attachment Title'][] = array('text' => $this->_prepareText($element->title()), 'html' => false);
         }
-        
-        // The Zotero API will not return a file unless a private key exists, so 
+
+        // The Zotero API will not return a file unless a private key exists, so
         // prevent unnecessary requests.
         if (!$this->_privateKey) {
             return;
         }
-        
+
         // Get the file URLs.
         $method = "{$this->_libraryType}ItemFile";
         $urls = $this->_client->$method($this->_libraryId, $element->key());
-        
-        // Not all attachments have corresponding files in Amazon S3, so return 
+
+        // Not all attachments have corresponding files in Amazon S3, so return
         // those that do not.
         if (!$urls['s3']) {
             return;
         }
-        
+
         // Name the file.
         $uri = Zend_Uri::factory($urls['s3']);
 
@@ -350,11 +350,11 @@ class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
         if (!$name) {
             $name = urldecode(basename($uri->getPath()));
         }
-        
+
         // Set the file metadata.
         $this->_fileMetadata['files'][] = array(
-            'source' => $urls['zotero'], 
-            'name' => $name, 
+            'source' => $urls['zotero'],
+            'name' => $name,
             // Set the title.
             'metadata' => array(
                 'Dublin Core' => array(
@@ -365,20 +365,20 @@ class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
             )
         );
     }
-   
+
    /**
     * Inserts a row into zotero_import_items.
-    * 
+    *
     * @param int $itemId
     * @param int $zoteroItemId
     * @param int $zoteroItemParentId
     * @param string $zoteroItemType
     * @param string $zoteroUpdated
     */
-   protected function _insertZoteroImportItem($itemId, 
-                                              $zoteroItemKey, 
+   protected function _insertZoteroImportItem($itemId,
+                                              $zoteroItemKey,
                                               $zoteroItemParentKey,
-                                              $zoteroItemType, 
+                                              $zoteroItemType,
                                               $zoteroUpdated)
    {
         $zoteroItem = new ZoteroImportItem;
@@ -391,10 +391,10 @@ class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
         $zoteroItem->save();
         release_object($zoteroItem);
    }
-    
+
     /**
      * Gets values via XPath.
-     * 
+     *
      * @param Zend_Feed_Element $content The XML element object to search.
      * @param string $xpath The XPath.
      * @param bool $fetchOne Fetch all the results or just the first.
@@ -404,14 +404,25 @@ class ZoteroImport_ImportProcess extends Omeka_Job_Process_AbstractProcess
     {
         $xml = simplexml_load_string($content->div->saveXml());
         $xml->registerXPathNamespace('default', 'http://www.w3.org/1999/xhtml');
-        
+
         // Experimental: automatically namespace each node in the xpath.
         //$xpath = preg_replace('#(/)([a-z])#i', '$1default:$2', $xpath);
-        
+
         $result = $xml->xpath($xpath);
         if ($fetchOne) {
             return $result[0];
         }
         return $result;
+    }
+
+    /**
+     * Prepare text for MySQL insertion by replacing 4-byte sequences with �.
+     *
+     * @param string $text
+     * @return string
+     */
+    protected function _prepareText($text)
+    {
+        return preg_replace('/[\x{10000}-\x{10FFFF}]/u', "\xEF\xBF\xBD", $text);
     }
 }
