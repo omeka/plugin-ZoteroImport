@@ -275,7 +275,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionContro
                 array('Description', array('tag' => 'p', 'class' => 'explanation')), 
                 'Errors', 
                 array(array('InputsTag' => 'HtmlTag'), array('tag' => 'div', 'class' => 'inputs')), 
-                'Label', 
+                array('Label', array('class' => 'field-meta')), 
                 array(array('FieldTag' => 'HtmlTag'), array('tag' => 'div', 'class' => 'field'))
             )
         ));
@@ -290,7 +290,7 @@ class ZoteroImport_IndexController extends Omeka_Controller_AbstractActionContro
                 array('Description', array('tag' => 'p', 'class' => 'explanation')), 
                 'Errors', 
                 array(array('InputsTag' => 'HtmlTag'), array('tag' => 'div', 'class' => 'inputs')), 
-                'Label', 
+                array('Label', array('class' => 'field-meta')), 
                 array(array('FieldTag' => 'HtmlTag'), array('tag' => 'div', 'class' => 'field'))
             )
         ));
